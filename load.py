@@ -84,7 +84,11 @@ this.survey_online = False
 #if(config.get("ExTool_SCSound")==None):
 #   config.set("ExTool_SCSound", "1")
 if(config.get("ExTool_TrspdrSound")==None):
-   config.set("ExTool_TrspdrSound", "1")
+   config.set("ExTool_TrspdrSound", "0")
+if(config.get("ExTool_AutoTrspdr")==None):
+   config.set("ExTool_AutoTrspdr", "1")
+if(config.get("ExTool_SurveySound")==None):
+   config.set("ExTool_SurveySound", "1")
 if(config.get("ExTool_AutoSurvey")==None):
    config.set("ExTool_AutoSurvey", "1")
 #if(config.get("ExTool_AltiConf")==None):
@@ -117,8 +121,12 @@ def plugin_start():
    
    #this.trspdr_toggle = tk.StringVar(value=config.get("ExTool_TrspdrToggle"))
    this.trspdrsound = tk.StringVar(value=config.get("ExTool_TrspdrSound"))
-   this.destsound = tk.StringVar(value=config.get("ExTool_DestSound"))
+   this.autotrspdr = tk.StringVar(value=config.get("ExTool_AutoTrspdr"))
+   
+   this.surveysound = tk.StringVar(value=config.get("ExTool_SurveySound"))
    this.autosurvey = tk.StringVar(value=config.get("ExTool_AutoSurvey"))
+
+   this.destsound = tk.StringVar(value=config.get("ExTool_DestSound"))
 
    this.debug = tk.StringVar(value=config.get("ExTool_Debug"))
    #this.extool_on = tk.StringVar(value=config.get("ExTool_On"))
@@ -177,8 +185,11 @@ def plugin_prefs(parent, cmdr, is_beta):
    #alticonf_entry = nb.Entry(frame, textvariable=this.alticonf)
    #alticonf_entry.grid(row=12, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
 
-   autosurvey_checkbox = nb.Checkbutton(frame, text="Autoactivate survey when activate transponder", variable=this.autosurvey)
-   autosurvey_checkbox.grid(columnspan=2, padx = BUTTONX, pady = PADY, sticky=tk.W)
+   autotrspdr_checkbox = nb.Checkbutton(frame, text="Autoactivate transponder when you are in orbit of a landable planet", variable=this.autotrspdr)
+   autotrspdr_checkbox.grid(columnspan=2, padx = BUTTONX, pady = PADY, sticky=tk.W)
+   
+   #autosurvey_checkbox = nb.Checkbutton(frame, text="Autoactivate survey when transponder is below 200km", variable=this.autosurvey)
+   #autosurvey_checkbox.grid(columnspan=2, padx = BUTTONX, pady = PADY, sticky=tk.W)
    
    nb.Label(frame).grid(sticky=tk.W)
    #delautoscreenshot_checkbox = nb.Checkbutton(frame, text="Delete screenshot taken by ExTool", variable=this.deleteautoscreen)
@@ -197,8 +208,11 @@ def plugin_prefs(parent, cmdr, is_beta):
    #delscdir_entry.grid(row=16, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
 
    nb.Label(frame).grid(sticky=tk.W)
-   trspdrsound_checkbox = nb.Checkbutton(frame, text="Play a sound when using transponder", variable=this.trspdrsound)
+   trspdrsound_checkbox = nb.Checkbutton(frame, text="Play sound when using transponder", variable=this.trspdrsound)
    trspdrsound_checkbox.grid(columnspan=2, padx = BUTTONX, pady = PADY, sticky=tk.W)
+
+   surveysound_checkbox = nb.Checkbutton(frame, text="Play sound when using survey", variable=this.surveysound)
+   surveysound_checkbox.grid(columnspan=2, padx = BUTTONX, pady = PADY, sticky=tk.W)
    
    #trspdrtoggle_label = nb.Label(frame, text="Transponder des/activation toggle :")
    #trspdrtoggle_label.grid(row=19, padx=PADX, sticky=tk.W)
@@ -210,7 +224,7 @@ def plugin_prefs(parent, cmdr, is_beta):
    #trspdroff_entry = nb.Entry(frame, textvariable=this.trspdr_off)
    #trspdroff_entry.grid(row=19, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
 
-   destsound_checkbox = nb.Checkbutton(frame, text="Play a sound when destination is set", variable=this.destsound)
+   destsound_checkbox = nb.Checkbutton(frame, text="Play sound when destination is set", variable=this.destsound)
    destsound_checkbox.grid(columnspan=2, padx = BUTTONX, pady = PADY, sticky=tk.W)
 
    nb.Label(frame).grid(sticky=tk.W)
@@ -226,13 +240,16 @@ def prefs_changed(cmdr, is_beta):
    config.set("ExTool_APIKey", this.apikey.get())
    #config.set("ExTool_SCSound", this.scsound.get())
    #config.set("ExTool_AltiSound", this.altisound.get())
+   config.set("ExTool_AutoTrspdr", this.autotrspdr.get())
+   config.set("ExTool_TrspdrSound", this.trspdrsound.get())
+   
    config.set("ExTool_AutoSurvey", this.autosurvey.get())
+   config.set("ExTool_SurveySound", this.trspdrsound.get())
    
    config.set("ExTool_SCDIR", this.scdir.get())
    #config.set("ExTool_DeleteAutoScreen", this.deleteautoscreen.get())
    config.set("ExTool_DeleteScreen", this.deletescreen.get())
    
-   config.set("ExTool_TrspdrSound", this.trspdrsound.get())
    config.set("ExTool_DestSound", this.destsound.get())
 
    config.set("ExTool_Debug", this.debug.get())
@@ -333,16 +350,21 @@ def dashboard_entry(cmdr, is_beta, entry):
       this.SCmode = entry['Flags'] & 1<<4 and True or False
       this.SRVmode = entry['Flags'] & 1<<26 and True or False
       this.landed = this.landed or this.SRVmode
-      print "body = {}".format(this.body_name)
-      print entry
+      #print "LatLon = {}".format(entry['Flags'] & 1<<21 and True or False)
+      #print entry
       if(entry['Flags'] & 1<<21 and True or False):
          if('Altitude' in entry):
             update_nearloc(entry['Latitude'], entry['Longitude'], round(entry['Altitude'] / 1000.,3), entry['Heading'], timestamp)
          else:
             update_nearloc(entry['Latitude'], entry['Longitude'], 0, entry['Heading'], timestamp)
+         
+         if this.autotrspdr.get()=="1":
+            transponder(True, cmdr)
+            #print "Survey = {}".format(this.survey_online)
       else:
          this.body_name = None
          update_nearloc(None, None, None, None, timestamp)
+         transponder(False)
       #print "landed = {}".format(this.landed)
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
@@ -397,12 +419,18 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
                this.survey_online = True
                   
          if entry['Message'].lower() == this.trspdrToggle.lower():
-            if this.trspdr_online:
+            if this.autotrspdr.get()=="1":
+               this.autotrspdr = tk.StringVar(value="0")
                transponder(False)
             else:
-               if this.autosurvey.get()=="1":
-                  this.survey_online = True
+               this.autotrspdr = tk.StringVar(value="1")
                transponder(True, cmdr)
+            #if this.trspdr_online:
+            #   transponder(False)
+            #else:
+            #   if this.autosurvey.get()=="1":
+            #      this.survey_online = True
+            #   transponder(True, cmdr)
                
          if entry['Message'][:len(this.setdestToggle)].lower() == this.setdestToggle.lower():
             try:
@@ -442,14 +470,14 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             name_point = entry['Message'][len(this.delpointToggle)+1:]
             send_delpoint(cmdr, name_point)
 
-         #if entry['Message'].lower() == "#ExTool BT":
+         #if entry['Message'].lower() == "#ExTool BT".lower():
          #   timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-         #   queueScreenshot("SAVE", timestamp)
+         #   send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot SAVE", this.nearloc['Time'])
          #   send_savepoint(cmdr, "Brain Trees", timestamp)
             
-         #if entry['Message'].lower() == "#ExTool VOLCA":
+         #if entry['Message'].lower() == "#ExTool VOLCA".lower():
          #   timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-         #   queueScreenshot("SAVE", timestamp)
+         #   send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot SAVE", this.nearloc['Time'])
          #   send_savepoint(cmdr, "Volcanism", timestamp)
             
       if entry['event'] == 'Screenshot':
@@ -475,7 +503,6 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          if entry['PlayerControlled']:
             if ('Latitude' in entry) and ('Longitude' in entry):
                this.landed = True
-               transponder(False)
                timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
                send_data(cmdr, entry['Latitude'], entry['Longitude'], None, None, entry['event'], timestamp)
       if entry['event'] == 'Liftoff':
@@ -554,8 +581,8 @@ def update_nearloc(latitude, longitude, altitude, heading, timestamp):
    this.nearloc['Altitude'] = altitude
    this.nearloc['Heading'] = heading
    this.nearloc['Time'] = timestamp
-   if(this.debug.get()=="1"):
-      print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "update nearloc to ({},{}) A{} H{} at {}".format(this.nearloc['Latitude'],this.nearloc['Longitude'],this.nearloc['Altitude'],this.nearloc['Heading'],this.nearloc['Time'])
+   #if(this.debug.get()=="1"):
+   #   print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "update nearloc to ({},{}) A{} H{} at {}".format(this.nearloc['Latitude'],this.nearloc['Longitude'],this.nearloc['Altitude'],this.nearloc['Heading'],this.nearloc['Time'])
 
 def send_data(cmdr, latitude, longitude, altitude, heading, event, timestamp):
    #if (time.time()>this.time_lastsend+this.delay):
@@ -568,12 +595,12 @@ def send_data(cmdr, latitude, longitude, altitude, heading, event, timestamp):
          trspdr_status = "1"
       else:
          trspdr_status = "0"
-         
-      if(this.landed):
+
+      if(not this.survey_online or altitude is None):
+         event += ' NA'
+      elif(this.landed):
          event += ' L'
       #elif(this.altitude.get()=="0"):
-      elif(not this.survey_online or altitude is None):
-         event += ' NA'
       elif(this.SCmode):
          event += ' SC'
    elif(event=='Screenshot NA') :
@@ -621,14 +648,25 @@ def send_data(cmdr, latitude, longitude, altitude, heading, event, timestamp):
    new_url = this.url_website+"index.php?mode=3d&planet={}&goto={},{}".format(this.body_name, latitude, longitude)
    updateInfoURL(new_text, new_url)
 
-   if(this.trspdr_online and (event=='Screenshot' or event=='Screenshot NA' or event=='Screenshot SC')) :
+   if(trspdr_status=="1") :
       call(cmdr, 'coords', payload, callback=update_velocity)
    else:
       call(cmdr, 'coords', payload)
 
-   if(this.trspdrsound.get()=="1") :
-      soundfile = 'snd_good.wav'
-      this.queue.put(('playsound', soundfile, None))
+   
+   if(event=='Screenshot' or event=='Screenshot SC' or event=='Screenshot NA' or event=='Screenshot L' or event=='Screenshot SAVE' or event=='Screenshot MAT' or event=='Screenshot SCAN'):
+      if(trspdr_status=="1") :
+         if(this.survey_online):
+            if(this.trspdrsound.get()=="1" or this.surveysound.get()=="1") :
+               soundfile = 'snd_good.wav'
+               this.queue.put(('playsound', soundfile, None))
+         else:
+            if(this.trspdrsound.get()=="1"):
+               soundfile = 'snd_good.wav'
+               this.queue.put(('playsound', soundfile, None))
+      else:
+         soundfile = 'snd_good.wav'
+         this.queue.put(('playsound', soundfile, None))
 
 def send_material(cmdr, category, name, count, timestamp):
    url = this.url_website+"send_data"
@@ -765,8 +803,8 @@ def worker():
                         bearing = reply['Bearing']
                         distance = reply['Distance']
                         updateBearing(lat_dest,lon_dest,bearing,distance)
-                  if callback:
-                     callback(reply)
+               if callback:
+                  callback(reply)
                break
                
             except:
@@ -797,12 +835,21 @@ def call(cmdr, sendmode, args, callback=None):
    this.queue.put(('senddata', args, callback))
 
 def update_velocity(args):
-   if(this.debug.get()=="1"):
-      print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "TRSPDR : n={} vel={} delay={}".format(this.trspdr_count, args['Velocity'], args['TrspdrDelay']/1000)
-   if(this.trspdr_count>1):
-      this.trspdr_delay = max(min(args['TrspdrDelay'],100000),5000)
-      if(args['TrspdrDelay'] == 0):
-         transponder(False)
+   if ('TrspdrDelay' in args) and ('Velocity' in args):
+      if(this.debug.get()=="1"):
+         print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "TRSPDR : n={} vel={} delay={}".format(this.trspdr_count, args['Velocity'], args['TrspdrDelay']/1000)
+      if(this.trspdr_count>1):
+         if this.SCmode:
+            this.trspdr_delay = max(min(args['TrspdrDelay'],20000),5000)
+            if(args['TrspdrDelay'] == 0):
+               this.trspdr_delay = 20000
+         else:
+            this.trspdr_delay = max(min(args['TrspdrDelay'],60000),5000)
+            if(args['TrspdrDelay'] == 0):
+               this.trspdr_delay = 60000
+         #   transponder(False)
+   else:
+      this.trspdr_delay = 10000
 
 def check_version():
    url = this.url_website+"EDMC/version"
@@ -822,7 +869,7 @@ def transponder(status, cmdr = None):
    if(this.debug.get()=="1"):
       print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "TRSPDR status = {}".format(status)
    if status:
-      if not this.landed:
+      if not this.trspdr_online:
          updateInfo("Transponder activated")
          this.trspdr_online = True
          this.trspdr_delay = 10000
