@@ -20,8 +20,7 @@ import plug
 
 this = sys.modules[__name__]
 this.session = requests.Session()
-this.queue = Q.PriorityQueue()
-this.SCqueue = Q.Queue()
+this.queue = Q.Queue()
 this.cmdr_name = None
 
 _TIMEOUT = 20
@@ -45,24 +44,28 @@ this.body_name = None
 this.nearloc = {
    'Latitude' : None,
    'Longitude' : None,
+   'Altitude' : None,
+   'Heading' : None,
    'Time' : None
 }
 this.nearloc = dict(this.nearloc)
 
 #this.SCnoalt = ""
-this.altitude = 0
-this.trySC = False
-this.ntrySC = 0
-this.SCnocoord = 0
+#this.altitude = 0
+#this.trySC = False
+#this.ntrySC = 0
+#this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
 this.version = "0.8.6.1"
 this.update = True
+this.new_version = False
 this.update_version = None
-this.relog = False
+#this.relog = False
 
-this.altiToggle = "#ExTool ALT"
+#this.altiToggle = "#ExTool ALT"
 this.trspdrToggle = "#ExTool TOGGLE"
+this.surveyToggle = "#ExTool SURVEY"
 this.delscToggle = "#ExTool DELSC"
 this.ndelsc = 0
 this.setdestToggle = "#ExTool DEST"
@@ -71,22 +74,25 @@ this.delpointToggle = "#ExTool DEL"
 
 this.label = tk.Label()
 this.trspdr_online = False
+this.survey_online = False
 #if(config.get("ExTool_TrspdrToggle")==None):
 #   config.set("ExTool_TrspdrToggle", "#ExTool TOGGLE")
 #if(config.get("ExTool_On")==None):
 #   config.set("ExTool_On", "#ExTool ON")
 #if(config.get("ExTool_DelSC")==None):
 #   config.set("ExTool_DelSC", "#ExTool DELSC")
-if(config.get("ExTool_SCSound")==None):
-   config.set("ExTool_SCSound", "1")
+#if(config.get("ExTool_SCSound")==None):
+#   config.set("ExTool_SCSound", "1")
 if(config.get("ExTool_TrspdrSound")==None):
    config.set("ExTool_TrspdrSound", "1")
+if(config.get("ExTool_AutoSurvey")==None):
+   config.set("ExTool_AutoSurvey", "1")
 #if(config.get("ExTool_AltiConf")==None):
 #   config.set("ExTool_AltiConf", "#ExTool A")
 #if(config.get("ExTool_Altitude")==None):
 #   config.set("ExTool_Altitude", "0")
-if(config.get("ExTool_AltiSound")==None):
-   config.set("ExTool_AltiSound", "1")
+#if(config.get("ExTool_AltiSound")==None):
+#   config.set("ExTool_AltiSound", "1")
 if(config.get("ExTool_DestSound")==None):
    config.set("ExTool_DestSound", "1")
 if(config.get("ExTool_DeleteAutoScreen")==None):
@@ -100,18 +106,19 @@ def plugin_start():
    this.apikey = tk.StringVar(value=config.get("ExTool_APIKey"))
    #this.autoupdate = tk.StringVar(value=config.get("Autoupdate"))
    #this.disablescans = tk.StringVar(value=config.get("ExTool_DisableScans"))
-   this.scsound = tk.StringVar(value=config.get("ExTool_SCSound"))
+   #this.scsound = tk.StringVar(value=config.get("ExTool_SCSound"))
    #this.alticonf = tk.StringVar(value=config.get("ExTool_AltiConf"))
-   this.altisound = tk.StringVar(value=config.get("ExTool_AltiSound"))
+   #this.altisound = tk.StringVar(value=config.get("ExTool_AltiSound"))
    #this.altitude = tk.StringVar(value=config.get("ExTool_Altitude"))
    
    this.scdir = tk.StringVar(value=config.get("ExTool_SCDIR"))
-   this.deleteautoscreen = tk.StringVar(value=config.get("ExTool_DeleteAutoScreen"))
+   #this.deleteautoscreen = tk.StringVar(value=config.get("ExTool_DeleteAutoScreen"))
    this.deletescreen = tk.StringVar(value=config.get("ExTool_DeleteScreen"))
    
    #this.trspdr_toggle = tk.StringVar(value=config.get("ExTool_TrspdrToggle"))
    this.trspdrsound = tk.StringVar(value=config.get("ExTool_TrspdrSound"))
    this.destsound = tk.StringVar(value=config.get("ExTool_DestSound"))
+   this.autosurvey = tk.StringVar(value=config.get("ExTool_AutoSurvey"))
 
    this.debug = tk.StringVar(value=config.get("ExTool_Debug"))
    #this.extool_on = tk.StringVar(value=config.get("ExTool_On"))
@@ -153,12 +160,12 @@ def plugin_prefs(parent, cmdr, is_beta):
    apikey_entry = nb.Entry(frame, textvariable=this.apikey)
    apikey_entry.grid(row=11, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
    
-   nb.Label(frame).grid(sticky=tk.W)
-   scsound_checkbox = nb.Checkbutton(frame, text="Play a sound for each screenshot", variable=this.scsound)
-   scsound_checkbox.grid(columnspan=2, padx = BUTTONX, pady = PADY, sticky=tk.W)
+   #nb.Label(frame).grid(sticky=tk.W)
+   #scsound_checkbox = nb.Checkbutton(frame, text="Play a sound for each screenshot", variable=this.scsound)
+   #scsound_checkbox.grid(columnspan=2, padx = BUTTONX, pady = PADY, sticky=tk.W)
 
-   altisound_checkbox = nb.Checkbutton(frame, text="Altitude configuration sound", variable=this.altisound)
-   altisound_checkbox.grid(columnspan=2, padx = BUTTONX, pady = PADY, sticky=tk.W)
+   #altisound_checkbox = nb.Checkbutton(frame, text="Altitude configuration sound", variable=this.altisound)
+   #altisound_checkbox.grid(columnspan=2, padx = BUTTONX, pady = PADY, sticky=tk.W)
    
    #altitude_label = nb.Label(frame, text="Altitude in km (between 0 and 200) :")
    #altitude_label.grid(row=11, padx=PADX, sticky=tk.W)
@@ -170,16 +177,19 @@ def plugin_prefs(parent, cmdr, is_beta):
    #alticonf_entry = nb.Entry(frame, textvariable=this.alticonf)
    #alticonf_entry.grid(row=12, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
 
+   autosurvey_checkbox = nb.Checkbutton(frame, text="Autoactivate survey when activate transponder", variable=this.autosurvey)
+   autosurvey_checkbox.grid(columnspan=2, padx = BUTTONX, pady = PADY, sticky=tk.W)
+   
    nb.Label(frame).grid(sticky=tk.W)
-   delautoscreenshot_checkbox = nb.Checkbutton(frame, text="Delete screenshot taken by ExTool", variable=this.deleteautoscreen)
-   delautoscreenshot_checkbox.grid(columnspan=2, padx = BUTTONX, pady = PADY, sticky=tk.W)
+   #delautoscreenshot_checkbox = nb.Checkbutton(frame, text="Delete screenshot taken by ExTool", variable=this.deleteautoscreen)
+   #delautoscreenshot_checkbox.grid(columnspan=2, padx = BUTTONX, pady = PADY, sticky=tk.W)
    delscreenshot_checkbox = nb.Checkbutton(frame, text="Delete screenshot taken manually (with F10 and used by ExTool)", variable=this.deletescreen)
    delscreenshot_checkbox.grid(columnspan=2, padx = BUTTONX, pady = PADY, sticky=tk.W)
    
    scdir_label = nb.Label(frame, text="Screenshot Directory :")
-   scdir_label.grid(row=18, padx=PADX, sticky=tk.W)
+   scdir_label.grid(row=15, padx=PADX, sticky=tk.W)
    scdir_entry = nb.Entry(frame, textvariable=this.scdir)
-   scdir_entry.grid(row=18, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
+   scdir_entry.grid(row=15, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
 
    #delscdir_label = nb.Label(frame, text="Delete screenshot toggle :")
    #delscdir_label.grid(row=16, padx=PADX, sticky=tk.W)
@@ -187,7 +197,7 @@ def plugin_prefs(parent, cmdr, is_beta):
    #delscdir_entry.grid(row=16, column=1, padx=PADX, pady=PADY, sticky=tk.EW)
 
    nb.Label(frame).grid(sticky=tk.W)
-   trspdrsound_checkbox = nb.Checkbutton(frame, text="Play a sound when activating/deactivating transponder", variable=this.trspdrsound)
+   trspdrsound_checkbox = nb.Checkbutton(frame, text="Play a sound when using transponder", variable=this.trspdrsound)
    trspdrsound_checkbox.grid(columnspan=2, padx = BUTTONX, pady = PADY, sticky=tk.W)
    
    #trspdrtoggle_label = nb.Label(frame, text="Transponder des/activation toggle :")
@@ -214,27 +224,14 @@ def prefs_changed(cmdr, is_beta):
    #config.set("ExTool_DisableScans", this.disablescans.get())
    
    config.set("ExTool_APIKey", this.apikey.get())
-   config.set("ExTool_SCSound", this.scsound.get())
-   #config.set("ExTool_AltiConf", this.alticonf.get())
-   config.set("ExTool_AltiSound", this.altisound.get())
-##   try :
-##      isnum = int(this.altitude.get())
-##      if(isnum>=0 and isnum<=200):
-##         config.set("ExTool_Altitude", this.altitude.get())
-##      else:
-##         int("A")
-##   except :
-##      config.set("ExTool_Altitude", "0")
-##      this.altitude = tk.StringVar(value=config.get("ExTool_Altitude"))
+   #config.set("ExTool_SCSound", this.scsound.get())
+   #config.set("ExTool_AltiSound", this.altisound.get())
+   config.set("ExTool_AutoSurvey", this.autosurvey.get())
    
    config.set("ExTool_SCDIR", this.scdir.get())
-   config.set("ExTool_DeleteAutoScreen", this.deleteautoscreen.get())
+   #config.set("ExTool_DeleteAutoScreen", this.deleteautoscreen.get())
    config.set("ExTool_DeleteScreen", this.deletescreen.get())
-   #config.set("ExTool_DelSC", this.delsc_toggle.get())
    
-   #config.set("ExTool_TrspdrOn", this.trspdr_on.get())
-   #config.set("ExTool_TrspdrOff", this.trspdr_off.get())
-   #config.set("ExTool_TrspdrToggle", this.trspdr_toggle.get())
    config.set("ExTool_TrspdrSound", this.trspdrsound.get())
    config.set("ExTool_DestSound", this.destsound.get())
 
@@ -255,19 +252,18 @@ def plugin_app(parent):
    this.status.grid(row = 0, column = 1, sticky=tk.W)
    this.bearing_status.grid(row = 1, column = 0, columnspan=2, sticky=tk.W)
 
-   #this.info = False
-   #this.status1.grid_remove()
-   #this.infoURL = False
-   #this.status2.grid_remove()
    this.bearing = False
    this.bearing_status.grid_remove()
    
    if this.update:
-      updateInfo("v"+this.version+" - Need to relog into Elite Dangerous", False)
+      if this.new_version:
+         updateInfoURL("New version v"+this.update_version+" available", this.url_website+"EDMC/latest_ExTool.zip", False)
+      else:
+         updateInfo("v"+this.version+" - Ready", False)
       #this.status2.grid_remove()
       #this.status1 = tk.Label(this.frame, anchor=tk.W, text="v"+this.version+" - Need to relog into Elite Dangerous")
    else:
-      updateInfoURL("Need an update to v"+this.update_version, this.url_website+"EDMC/latest_ExTool.zip")
+      updateInfoURL("Need an update to v"+this.update_version, this.url_website+"EDMC/latest_ExTool.zip", False)
       #this.status1.grid_remove()
       #this.status2 = HyperlinkLabel(this.frame, url = this.url_website+"EDMC/latest_ExTool.zip", popup_copy = True)
       #this.status2["text"] = "Need an update to v"+this.update_version
@@ -293,7 +289,7 @@ def updateInfo(msg, withTime = True):
    if(this.debug.get()=="1"):
       print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "updateInfo = {}".format(msg)
 
-def updateInfoURL(msg, url):
+def updateInfoURL(msg, url, withTime = True):
    #this.status["text"] = ""
    #this.status.grid_remove()
    #this.status = HyperlinkLabel(this.frame, popup_copy = True)
@@ -303,7 +299,11 @@ def updateInfoURL(msg, url):
    #   this.info = False
    #   this.status2.grid()
    #   this.infoURL = True
-   this.status["text"] = datetime.datetime.now().strftime("%H:%M") + " - " + msg
+   #this.status["text"] = datetime.datetime.now().strftime("%H:%M") + " - " + msg
+   if withTime:
+      this.status["text"] = datetime.datetime.now().strftime("%H:%M") + " - " + msg
+   else:
+      this.status["text"] = msg
    this.status["url"] = url
    #this.status.grid(row = 0, column = 1, sticky=tk.W)
    
@@ -326,284 +326,271 @@ def updateBearing(latitude, longitude, bearing = None, distance = None):
    if(this.debug.get()=="1"):
       print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "updateBearing = {} / {}".format(bearing, distance)
 
+def dashboard_entry(cmdr, is_beta, entry):
+   if this.update:
+      timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+      this.landed = entry['Flags'] & 1<<1 and True or False
+      this.SCmode = entry['Flags'] & 1<<4 and True or False
+      this.SRVmode = entry['Flags'] & 1<<26 and True or False
+      this.landed = this.landed or this.SRVmode
+      print "body = {}".format(this.body_name)
+      print entry
+      if(entry['Flags'] & 1<<21 and True or False):
+         if('Altitude' in entry):
+            update_nearloc(entry['Latitude'], entry['Longitude'], round(entry['Altitude'] / 1000.,3), entry['Heading'], timestamp)
+         else:
+            update_nearloc(entry['Latitude'], entry['Longitude'], 0, entry['Heading'], timestamp)
+      else:
+         this.body_name = None
+         update_nearloc(None, None, None, None, timestamp)
+      #print "landed = {}".format(this.landed)
+
 def journal_entry(cmdr, is_beta, system, station, entry, state):
    if this.update:
       if entry['event'] == 'Location':
-         this.relog = True
-         this.SCmode = False
-         update_altitude(0)
+         transponder(False)
+         if ('StarSystem' in entry):
+            this.system_name = entry['StarSystem']
+            #print "SystemAddress = {}".format(entry['SystemAddress'])
+         if ('Body' in entry):
+            this.body_name = entry['Body']
+            #print "BodyID = {}".format(entry['BodyID'])
+         if ('Latitude' in entry) and ('Longitude' in entry):
+            this.landed = True
+            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+            send_data(cmdr, entry['Latitude'], entry['Longitude'], None, None, entry['event'], timestamp)
+         updateInfo("v"+this.version+" - Ready", False)
+
+      if entry['event'] == 'StartUp':
          transponder(False)
          if ('StarSystem' in entry):
             this.system_name = entry['StarSystem']
          if ('Body' in entry):
             this.body_name = entry['Body']
-         if ('Latitude' in entry) and ('Longitude' in entry):
-            this.landed = True
-            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-            update_nearloc(entry['Latitude'], entry['Longitude'], timestamp)
-            send_data(cmdr, this.system_name, this.body_name, entry['Latitude'], entry['Longitude'], entry['event'], timestamp)
+         this.droped = []
          updateInfo("v"+this.version+" - Ready", False)
 
-      if entry['event'] == 'StartUp':
-            transponder(False)
-            update_altitude(0)
-            this.SCmode = False
-            this.SRVmode = False
-            this.landed = False
-            this.droped = []
-            this.relog = False
-            updateInfo("v"+this.version+" - Need to relog into Elite Dangerous", False)
-            
       if entry['event'] == 'ShutDown':
-            transponder(False)
-            update_altitude(0)
-            this.SCmode = False
-            this.SRVmode = False
-            this.landed = False
-            this.droped = []
-            this.relog = False
-            updateInfo("v"+this.version+" - Need to relog into Elite Dangerous", False)
+         transponder(False)
+         this.system_name = None
+         this.body_name = None
+         this.droped = []
+         updateInfo("v"+this.version+" - Ready", False)
 
-      if this.relog:
-         if entry['event'] == 'SendText':
-            if entry['Message'][:len(this.delscToggle)].lower() == this.delscToggle.lower():
-               if(len(entry['Message'][len(this.delscToggle):])>0):
-                  try:
-                     this.ndelsc = int(entry['Message'][len(this.delscToggle):])
-                  except:
-                     this.ndelsc = 0
-               else:
-                  if this.deletescreen.get()=="1":
-                     this.deletescreen = tk.StringVar(value="0")
-                  else:
-                     this.deletescreen = tk.StringVar(value="1")
-
-            if entry['Message'].lower() == this.trspdrToggle.lower():
-               if this.trspdr_online:
-                  transponder(False)
-               else:
-                  transponder(True)
-
-            if entry['Message'][:len(this.altiToggle)].lower() == this.altiToggle.lower():
-               update_altitude(entry['Message'][len(this.altiToggle):])
-                  
-            if entry['Message'][:len(this.setdestToggle)].lower() == this.setdestToggle.lower():
+      if entry['event'] == 'SendText':
+         if entry['Message'][:len(this.delscToggle)].lower() == this.delscToggle.lower():
+            if(len(entry['Message'][len(this.delscToggle):])>0):
                try:
+                  this.ndelsc = int(entry['Message'][len(this.delscToggle):])
+               except:
+                  this.ndelsc = 0
+            else:
+               if this.deletescreen.get()=="1":
+                  this.deletescreen = tk.StringVar(value="0")
+               else:
+                  this.deletescreen = tk.StringVar(value="1")
+
+         if entry['Message'][:len(this.surveyToggle)].lower() == this.surveyToggle.lower():
+            if this.survey_online:
+               this.survey_online = False
+            else:
+               this.survey_online = True
+                  
+         if entry['Message'].lower() == this.trspdrToggle.lower():
+            if this.trspdr_online:
+               transponder(False)
+            else:
+               if this.autosurvey.get()=="1":
+                  this.survey_online = True
+               transponder(True, cmdr)
+               
+         if entry['Message'][:len(this.setdestToggle)].lower() == this.setdestToggle.lower():
+            try:
+               if(this.nearloc['Latitude'] is not None and this.nearloc['Longitude'] is not None):
                   coord_dest = entry['Message'][len(this.setdestToggle)+1:].strip("()").split(",")
                   latitude = coord_dest[0]
                   longitude = coord_dest[1]
-                  if this.altisound.get()=="1":
+                  if this.destsound.get()=="1":
                      soundfile = os.path.dirname(this.__file__)+'\\'+'new_destination.wav'
-                     this.queue.put((2,'playsound', soundfile, None))
+                     this.queue.put(('playsound', soundfile, None))
                   updateInfo("Set destination to ({},{})".format(latitude, longitude))
                   timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-                  queueScreenshot("DEST", timestamp)
                   send_destination(cmdr, 1, latitude, longitude)
-                  updateBearing(latitude,longitude)
-               except:
-                  updateInfo("Unset destination")
-                  send_destination(cmdr, 0, 0, 0)
-                  if this.bearing:
-                     this.bearing = False
-                     this.bearing_status.grid_remove()
-
-            if entry['Message'][:len(this.savepointToggle)].lower() == this.savepointToggle.lower():
-               timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-               queueScreenshot("SAVE", timestamp)
-               send_savepoint(cmdr, entry['Message'][len(this.savepointToggle)+1:], timestamp)
-               
-            if entry['Message'][:len(this.delpointToggle)].lower() == this.delpointToggle.lower():
-               name_point = entry['Message'][len(this.delpointToggle)+1:]
-               send_delpoint(cmdr, name_point)
-
-            #if entry['Message'].lower() == "#ExTool BT":
-            #   timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-            #   queueScreenshot("SAVE", timestamp)
-            #   send_savepoint(cmdr, "Brain Trees", timestamp)
-               
-            #if entry['Message'].lower() == "#ExTool VOLCA":
-            #   timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-            #   queueScreenshot("SAVE", timestamp)
-            #   send_savepoint(cmdr, "Volcanism", timestamp)
-               
-         if entry['event'] == 'Screenshot':
-            if ('System' in entry):
-               this.system_name = entry['System']
-            if ('Body' in entry):
-               this.body_name = entry['Body']
-            if ('Latitude' in entry) and ('Longitude' in entry):
-               this.SCnocoord = 0
-               timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-               update_nearloc(entry['Latitude'], entry['Longitude'], timestamp)
-               #if(not this.trspdr_online and this.trySC):
-               #   this.trySC = False
-               #else:
-               if('Altitude' in entry) and ('Heading' in entry):
-                  send_data(cmdr, entry['System'], entry['Body'], entry['Latitude'], entry['Longitude'], entry['event'], timestamp, entry['Altitude'], entry['Heading'])
+                  send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot DEST", this.nearloc['Time'])
                else:
-                  send_data(cmdr, entry['System'], entry['Body'], entry['Latitude'], entry['Longitude'], entry['event'], timestamp)
-               deleteScreenshot(entry['Filename'], this.trySC)
-               if(this.trySC):
-                  this.trySC = False
-               if(this.scsound.get()=="1") :
-                  soundfile = 'snd_good.wav'
-                  this.queue.put((2,'playsound', soundfile, None))
-            else:
-               if(this.trySC):
-                  this.SCnocoord += 1
-                  deleteScreenshot(entry['Filename'], this.trySC)
-                  this.trySC = False
-                  if(this.trspdr_online and this.trspdr_count==1):
-                     this.SCnocoord = 4
-                  if(this.SCnocoord<5):
-                     this.trspdr_delay = 10000
-                     if(this.scsound.get()=="1") :
-                        soundfile = 'snd_bad.wav'
-                        this.queue.put((2,'playsound', soundfile, None))
-                  else:
-                     this.SCnocoord = 0
-                     update_altitude(0)
-                     transponder(False)
-               
+                  plug.show_error(_('Error: #ExTool DEST need to have lat lon'))
+                  if(this.debug.get()=="1"):
+                     print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "Error: #ExTool DEST need to have lat lon"
+            except:
+               updateInfo("Unset destination")
+               send_destination(cmdr, 0, 0, 0)
+               if this.bearing:
+                  this.bearing = False
+                  this.bearing_status.grid_remove()
 
-         if entry['event'] == 'Touchdown':
-            if entry['PlayerControlled']:
-               if ('Latitude' in entry) and ('Longitude' in entry):
-                  update_altitude(0)
-                  transponder(False)
-                  this.landed = True
-                  timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-                  update_nearloc(entry['Latitude'], entry['Longitude'], timestamp)
-                  send_data(cmdr, this.system_name, this.body_name,  entry['Latitude'], entry['Longitude'], entry['event'], timestamp)
+         if entry['Message'][:len(this.savepointToggle)].lower() == this.savepointToggle.lower():
+            if(this.nearloc['Latitude'] is not None and this.nearloc['Longitude'] is not None):
+               timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+               send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot SAVE", this.nearloc['Time'])
+               send_savepoint(cmdr, entry['Message'][len(this.savepointToggle)+1:], timestamp)
             else:
-               this.SRVmode = True
-         if entry['event'] == 'Liftoff':
+               plug.show_error(_('Error: #ExTool SAVE need to have lat lon'))
+               if(this.debug.get()=="1"):
+                  print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "Error: #ExTool SAVE need to have lat lon"
+            
+         if entry['Message'][:len(this.delpointToggle)].lower() == this.delpointToggle.lower():
+            name_point = entry['Message'][len(this.delpointToggle)+1:]
+            send_delpoint(cmdr, name_point)
+
+         #if entry['Message'].lower() == "#ExTool BT":
+         #   timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+         #   queueScreenshot("SAVE", timestamp)
+         #   send_savepoint(cmdr, "Brain Trees", timestamp)
+            
+         #if entry['Message'].lower() == "#ExTool VOLCA":
+         #   timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+         #   queueScreenshot("SAVE", timestamp)
+         #   send_savepoint(cmdr, "Volcanism", timestamp)
+            
+      if entry['event'] == 'Screenshot':
+         if ('Latitude' in entry) and ('Longitude' in entry):
+            this.system_name = entry['System']
+            this.body_name = entry['Body']
+            if ('Altitude' in entry):
+               altitude = round(entry['Altitude'] / 1000.,3)
+            else:
+               altitude = None
+            if ('Heading' in entry):
+               heading = entry['Heading']
+            else:
+               heading = None
+            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+            #if(not this.trspdr_online and this.trySC):
+            #   this.trySC = False
+            #else:
+            send_data(cmdr, entry['Latitude'], entry['Longitude'], altitude, heading, entry['event']+" NA", timestamp)
+            deleteScreenshot(entry['Filename'])
+
+      if entry['event'] == 'Touchdown':
+         if entry['PlayerControlled']:
             if ('Latitude' in entry) and ('Longitude' in entry):
-               if entry['PlayerControlled']:
-                  this.landed = False
-                  this.droped = []
-                  timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-                  send_data(cmdr, this.system_name, this.body_name, entry['Latitude'], entry['Longitude'], entry['event'], timestamp)
-
-         if entry['event'] == 'StartJump':
-            this.SCmode = True
-            if entry['JumpType'] == 'Hyperspace':
-               update_altitude(0)
+               this.landed = True
                transponder(False)
-               this.system_name = None
-               this.body_name = None
-         
-         if entry['event'] == 'SupercruiseEntry':
-            this.SCmode = True
+               timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+               send_data(cmdr, entry['Latitude'], entry['Longitude'], None, None, entry['event'], timestamp)
+      if entry['event'] == 'Liftoff':
+         if entry['PlayerControlled']:
+            if ('Latitude' in entry) and ('Longitude' in entry):
+               this.landed = False
+               this.droped = []
+               timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+               send_data(cmdr, entry['Latitude'], entry['Longitude'], None, None, entry['event'], timestamp)
+
+      if entry['event'] == 'StartJump':
+         this.SCmode = True
+         if entry['JumpType'] == 'Hyperspace':
+            transponder(False)
             this.system_name = entry['StarSystem']
             this.body_name = None
-         if entry['event'] == 'SupercruiseExit':
-            this.SCmode = False
-            this.system_name = entry['StarSystem']
-            if ('Body' in entry):
-               this.body_name = entry['Body']
+      
+      if entry['event'] == 'SupercruiseEntry':
+         this.SCmode = True
+         this.system_name = entry['StarSystem']
+      if entry['event'] == 'SupercruiseExit':
+         this.SCmode = False
+         this.system_name = entry['StarSystem']
+         if ('Body' in entry):
+            this.body_name = entry['Body']
+      
+      if entry['event'] == 'LaunchSRV':
+         this.SRVmode = True
+      if entry['event'] == 'DockSRV':
+         this.SRVmode = False
+
+      if entry['event'] == 'ApproachBody':
+         this.system_name = entry['StarSystem']
+         this.body_name = entry['Body']
+      if entry['event'] == 'LeaveBody':
+         transponder(False)
+         this.system_name = entry['StarSystem']
+         this.body_name = None
          
-         if entry['event'] == 'LaunchSRV':
-            this.SRVmode = True
-         if entry['event'] == 'DockSRV':
-            this.SRVmode = False
+      if entry['event'] == 'CollectCargo':
+         if this.landed:
+            if entry['Type'] in this.droped:
+               this.droped.remove(entry['Type'])
+            else:
+               timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+               send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot MAT", this.nearloc['Time'])
+               send_material(cmdr, "Cargo", entry['Type'], 1, timestamp)
+      if entry['event'] == 'EjectCargo':
+         if this.landed:
+            for x in range(0, entry['Count']):
+               this.droped.append(entry['Type'])
+      if entry['event'] == 'MaterialCollected':
+         if this.landed:
+            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+            send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot MAT", this.nearloc['Time'])
+            send_material(cmdr, entry['Category'], entry['Name'], entry['Count'], timestamp)
+      if entry['event'] == 'DatalinkScan':
+         if this.landed:
+            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+            send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot SCAN", this.nearloc['Time'])
+            send_datalink(cmdr, entry['Message'], timestamp)
+      if entry['event'] == 'DatalinkVoucher':
+         if this.landed:
+            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+            send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot SCAN", this.nearloc['Time'])
+            send_datavoucher(cmdr, entry['Reward'], entry['VictimFaction'], entry['PayeeFaction'], timestamp)
+      if entry['event'] == 'DataScanned':
+         if this.landed:
+            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+            send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot SCAN", this.nearloc['Time'])
+            send_datascan(cmdr, entry['Type'], timestamp)
 
-         if entry['event'] == 'CollectCargo':
-            if this.landed:
-               if entry['Type'] in this.droped:
-                  this.droped.remove(entry['Type'])
-               else:
-                  timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-                  queueScreenshot("MAT", timestamp)
-                  send_material(cmdr, "Cargo", entry['Type'], 1, timestamp)
-         if entry['event'] == 'EjectCargo':
-            if this.landed:
-               for x in range(0, entry['Count']):
-                  this.droped.append(entry['Type'])
-         if entry['event'] == 'MaterialCollected':
-            if this.landed:
-               timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-               queueScreenshot("MAT", timestamp)
-               send_material(cmdr, entry['Category'], entry['Name'], entry['Count'], timestamp)
-         if entry['event'] == 'DatalinkScan':
-            if this.landed:
-               timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-               queueScreenshot("SCAN", timestamp)
-               send_datalink(cmdr, entry['Message'], timestamp)
-         if entry['event'] == 'DatalinkVoucher':
-            if this.landed:
-               timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-               queueScreenshot("SCAN", timestamp)
-               send_datavoucher(cmdr, entry['Reward'], entry['VictimFaction'], entry['PayeeFaction'], timestamp)
-         if entry['event'] == 'DataScanned':
-            if this.landed:
-               timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-               queueScreenshot("SCAN", timestamp)
-               send_datascan(cmdr, entry['Type'], timestamp)
-
-def update_altitude(altitude):
-   if(this.debug.get()=="1"):
-      print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "try update altitude from {} to {}".format(this.altitude, altitude)
-   if this.landed:
-      return
-   try:
-      altitest = int(altitude)
-      if(this.altitude!=altitest):
-         if altitest>=0 and altitest<=200 :
-            if this.altisound.get()=="1":
-               soundfile = os.path.dirname(this.__file__)+'\\'+'new_altitude.wav'
-               this.queue.put((2,'playsound', soundfile, None))
-            updateInfo("Set altitude to {}km".format(altitest))
-            this.altitude = altitest
-            if(this.debug.get()=="1"):
-               print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "update altitude to {}km".format(altitest)
-   except ValueError:
-      this.status["text"] = "ERROR : altitude must be an integer between 0 and 200"
-
-def update_nearloc(latitude, longitude, timestamp):
-   if(this.debug.get()=="1"):
-      print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "update nearloc to ({},{}) at {}".format(latitude,longitude,timestamp)
+def update_nearloc(latitude, longitude, altitude, heading, timestamp):
    this.nearloc['Latitude'] = latitude
    this.nearloc['Longitude'] = longitude
+   this.nearloc['Altitude'] = altitude
+   this.nearloc['Heading'] = heading
    this.nearloc['Time'] = timestamp
+   if(this.debug.get()=="1"):
+      print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "update nearloc to ({},{}) A{} H{} at {}".format(this.nearloc['Latitude'],this.nearloc['Longitude'],this.nearloc['Altitude'],this.nearloc['Heading'],this.nearloc['Time'])
 
-def send_data(cmdr, system, body, latitude, longitude, event, timestamp, altitude = None, heading = None):
+def send_data(cmdr, latitude, longitude, altitude, heading, event, timestamp):
    #if (time.time()>this.time_lastsend+this.delay):
    
    url = this.url_website+"send_data"
    
    if(event=='Screenshot') :
-      if( this.SCqueue.empty() ):
-         SCtype = ""
-      else:
-         (SCtype) = this.SCqueue.get(False)
-      
-      if(SCtype==""):
-         if(this.landed):
-            event += ' L'
-         #elif(this.altitude.get()=="0"):
-         elif(this.altitude==0):
-            event += ' NA'
-         elif(this.SCmode):
-            event += ' SC'
-      else:
-         event += ' '+SCtype
 
-   if altitude is None:
-      if(event=='Screenshot' or event=='Screenshot SC') :
-         #altitude = this.altitude.get()
-         altitude = this.altitude
+      if(this.trspdr_online):
+         trspdr_status = "1"
       else:
-         altitude = "0"
-
-   if(this.trspdr_online):
-      trspdr_status = "1"
+         trspdr_status = "0"
+         
+      if(this.landed):
+         event += ' L'
+      #elif(this.altitude.get()=="0"):
+      elif(not this.survey_online or altitude is None):
+         event += ' NA'
+      elif(this.SCmode):
+         event += ' SC'
+   elif(event=='Screenshot NA') :
+      trspdr_status = "0"
+      if(this.landed):
+         event = 'Screenshot L'
    else:
       trspdr_status = "0"
 
+   if altitude is None:
+      altitude = "0"
+   if heading is None:
+      heading = ""
+
    payload = {
-      'system' : system,
-      'body' : body,
+      'system' : this.system_name,
+      'body' : this.body_name,
       'latitude' : '{}'.format(latitude),
       'longitude' : '{}'.format(longitude),
       'altitude' : '{}'.format(altitude),
@@ -613,24 +600,25 @@ def send_data(cmdr, system, body, latitude, longitude, event, timestamp, altitud
       'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
    }
 
-   if(event=='Screenshot' or event=='Screenshot SC') :
-      new_text = "ALT {}km - {}".format(altitude, body)
-   elif(event=='Screenshot NA') :
-      new_text = "NO ALT - {}".format(body)
+   if(event=='Screenshot' or event=='Screenshot SC' or event=='Screenshot NA') :
+      if(altitude == "0"):
+         new_text = "NO ALT - {}".format(this.body_name)
+      else:
+         new_text = "ALT {}km - {}".format(altitude, this.body_name)
    elif(event=='Screenshot L') :
-      new_text = "Ground - {}".format(body)
+      new_text = "Ground - {}".format(this.body_name)
    elif(event=='Screenshot MAT') :
-      new_text = "Material - {}".format(body)
+      new_text = "Material - {}".format(this.body_name)
    elif(event=='Screenshot SCAN') :
-      new_text = "Scan - {}".format(body)
+      new_text = "Scan - {}".format(this.body_name)
    elif(event=='Screenshot SAVE') :
-      new_text = "Save - {}".format(body)
+      new_text = "Save - {}".format(this.body_name)
    elif(event=='Screenshot DEST') :
-      new_text = "Destination - {}".format(body)
+      new_text = "Destination - {}".format(this.body_name)
    else:
-      new_text = event + " - {}".format(body)
+      new_text = event + " - {}".format(this.body_name)
 
-   new_url = this.url_website+"index.php?mode=3d&planet={}&goto={},{}".format(body, latitude, longitude)
+   new_url = this.url_website+"index.php?mode=3d&planet={}&goto={},{}".format(this.body_name, latitude, longitude)
    updateInfoURL(new_text, new_url)
 
    if(this.trspdr_online and (event=='Screenshot' or event=='Screenshot NA' or event=='Screenshot SC')) :
@@ -638,20 +626,27 @@ def send_data(cmdr, system, body, latitude, longitude, event, timestamp, altitud
    else:
       call(cmdr, 'coords', payload)
 
-   #call(cmdr, 'coords', payload)
-   #else :
-   #   new_text = "Wait {} seconds before resent...".format(round(this.time_lastsend+this.delay-time.time(), 2))
-   #   updateInfo(new_text)
+   if(this.trspdrsound.get()=="1") :
+      soundfile = 'snd_good.wav'
+      this.queue.put(('playsound', soundfile, None))
 
 def send_material(cmdr, category, name, count, timestamp):
    url = this.url_website+"send_data"
+   #timestamp = time.localtime(timestamp)
+   #timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
+   #timestamp = time.mktime(time.strptime(timestamp, '%Y-%m-%d %H:%M:%S'))
    payload = {
       'system' : this.system_name,
       'body' : this.body_name,
+      'latitude' : '{}'.format(this.nearloc['Latitude']),
+      'longitude' : '{}'.format(this.nearloc['Longitude']),
+      'altitude' : '{}'.format(this.nearloc['Altitude']),
+      'heading' : '{}'.format(this.nearloc['Heading']),
       'category' : category,
       'name' : name,
       'count' : '%d' % count,
-      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
+      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp)),
+      'time' : '%d' % round(this.nearloc['Time']-timestamp)
    }
    call(cmdr, 'materials', payload)
 
@@ -660,8 +655,13 @@ def send_datalink(cmdr, message, timestamp):
    payload = {
       'system' : this.system_name,
       'body' : this.body_name,
+      'latitude' : '{}'.format(this.nearloc['Latitude']),
+      'longitude' : '{}'.format(this.nearloc['Longitude']),
+      'altitude' : '{}'.format(this.nearloc['Altitude']),
+      'heading' : '{}'.format(this.nearloc['Heading']),
       'message' : message,
-      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
+      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp)),
+      'time' : '%d' % round(this.nearloc['Time']-timestamp)
    }
    call(cmdr, 'datalink', payload)
 
@@ -670,10 +670,15 @@ def send_datavoucher(cmdr, reward, victim, payee, timestamp):
    payload = {
       'system' : this.system_name,
       'body' : this.body_name,
+      'latitude' : '{}'.format(this.nearloc['Latitude']),
+      'longitude' : '{}'.format(this.nearloc['Longitude']),
+      'altitude' : '{}'.format(this.nearloc['Altitude']),
+      'heading' : '{}'.format(this.nearloc['Heading']),
       'reward' : '%d' % reward,
       'victim' : victim,
       'payee' : payee,
-      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
+      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp)),
+      'time' : '%d' % round(this.nearloc['Time']-timestamp)
    }
    call(cmdr, 'datavoucher', payload)
 
@@ -682,8 +687,13 @@ def send_datascan(cmdr, typescan, timestamp):
    payload = {
       'system' : this.system_name,
       'body' : this.body_name,
+      'latitude' : '{}'.format(this.nearloc['Latitude']),
+      'longitude' : '{}'.format(this.nearloc['Longitude']),
+      'altitude' : '{}'.format(this.nearloc['Altitude']),
+      'heading' : '{}'.format(this.nearloc['Heading']),
       'typescan' : typescan,
-      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
+      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp)),
+      'time' : '%d' % round(this.nearloc['Time']-timestamp)
    }
    call(cmdr, 'datascan', payload)
 
@@ -703,8 +713,13 @@ def send_savepoint(cmdr, name_point, timestamp):
    payload = {
       'system' : this.system_name,
       'body' : this.body_name,
+      'latitude' : '{}'.format(this.nearloc['Latitude']),
+      'longitude' : '{}'.format(this.nearloc['Longitude']),
+      'altitude' : '{}'.format(this.nearloc['Altitude']),
+      'heading' : '{}'.format(this.nearloc['Heading']),
       'name_point' : name_point,
-      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
+      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp)),
+      'time' : '%d' % round(this.nearloc['Time']-timestamp)
    }
    call(cmdr, 'savepoint', payload)
 
@@ -725,14 +740,9 @@ def worker():
       if not item:
          return	# Closing
       else:
-         (pnum, mode, data, callback) = item
+         (mode, data, callback) = item
 
       if(mode=='senddata'):
-         if(data['mode']=='savepoint' or data['mode']=='datascan' or data['mode']=='datavoucher' or data['mode']=='datalink' or data['mode']=='materials'):
-            data['latitude'] = '{}'.format(this.nearloc['Latitude'])
-            data['longitude'] = '{}'.format(this.nearloc['Longitude'])
-            timestamp = time.mktime(time.strptime(data['timestamp'], '%Y-%m-%d %H:%M:%S'))
-            data['time'] = '%d' % round(this.nearloc['Time']-timestamp)
 
          retrying = 0
          while retrying < 3:
@@ -755,17 +765,6 @@ def worker():
                         bearing = reply['Bearing']
                         distance = reply['Distance']
                         updateBearing(lat_dest,lon_dest,bearing,distance)
-                        #print "bearing : {}".format(bearing)
-                     #else:
-                        #updateBearing("","","","")
-                        #if this.bearing:
-                        #   print "remove bearing {}".format(this.bearing)
-                        #   this.bearing = False
-                        #   print "remove bearing1 {}".format(this.bearing)
-                        #   this.bearing_status.grid_remove()
-                        #   time.sleep(0.1)
-                        #   print "remove bearing2"
-                        #   this.bearing_status.update()
                   if callback:
                      callback(reply)
                break
@@ -786,41 +785,6 @@ def worker():
             if(this.debug.get()=="1"):
                print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "Error: Can't play sound for ExTool"
                print datetime.datetime.now().strftime("%H:%M:%S") + " - " + data
-      
-      elif(mode=='takeSC'):
-         try:
-            if EliteInForeground():
-               takeScreenshot()
-               time.sleep(2)
-               if(this.trySC):
-                  this.trySC = False
-                  this.ntrySC += 1
-                  if(this.debug.get()=="1"):
-                     print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "retry SC = {}".format(this.ntrySC)
-                  if(this.ntrySC<10):
-                     if( this.SCqueue.empty() ):
-                        SCtype = ""
-                     else:
-                        (SCtype) = this.SCqueue.get(False)
-                     queueScreenshot(SCtype, data)
-                  else:
-                     if(this.debug.get()=="1"):
-                        print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "cancel SC = {}".format(this.ntrySC)
-               else:
-                  if(this.debug.get()=="1"):
-                     print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "SC taken - stop retry = {}".format(this.ntrySC)
-                  this.ntrySC = 0
-            else:
-               if(this.trySC):
-                  this.trySC = False
-                  this.ntrySC = 0
-               if(this.debug.get()=="1"):
-                  print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "takeScreenshot cancel (Elite not in foreground)"
-         except:
-            plug.show_error(_("Error: Can't take a screenshot for ExTool"))
-            if(this.debug.get()=="1"):
-               print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "Error: Can't take a screenshot for ExTool"
-               print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "this.trySC = {}".format(this.trySC)
 
 def call(cmdr, sendmode, args, callback=None):
    args = dict(args)
@@ -830,7 +794,7 @@ def call(cmdr, sendmode, args, callback=None):
    args['apikey'] = this.apikey.get()
    if(this.debug.get()=="1"):
       print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "call : {}".format(sendmode)
-   this.queue.put((3,'senddata', args, callback))
+   this.queue.put(('senddata', args, callback))
 
 def update_velocity(args):
    if(this.debug.get()=="1"):
@@ -846,8 +810,15 @@ def check_version():
    if rsend.content[:5] != this.version[:5]:
       this.update_version = rsend.content
       this.update = False
+      this.new_version = True
+   else:
+      if rsend.content != this.version:
+         this.update_version = rsend.content
+         this.new_version = True
 
-def transponder(status):
+def transponder(status, cmdr = None):
+   if (cmdr is None) or (this.body_name is None) or (this.system_name is None) or (this.nearloc['Latitude'] is None) or (this.nearloc['Longitude'] is None):
+      status = False
    if(this.debug.get()=="1"):
       print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "TRSPDR status = {}".format(status)
    if status:
@@ -858,98 +829,40 @@ def transponder(status):
          this.trspdr_count = 0
          if this.trspdrsound.get()=="1":
             soundfile = os.path.dirname(this.__file__)+'\\'+'trspdr_on.wav'
-            this.queue.put((2,'playsound', soundfile, None))
-         transponderStart()
+            this.queue.put(('playsound', soundfile, None))
+         transponderStart(cmdr)
    else:
       if this.trspdr_online:
          this.trspdr_online = False
+         this.survey_online = False
          updateInfo("Transponder deactivated")
          if this.trspdrsound.get()=="1":
             soundfile = os.path.dirname(this.__file__)+'\\'+'trspdr_off.wav'
-            this.queue.put((2,'playsound', soundfile, None))
+            this.queue.put(('playsound', soundfile, None))
 
-def transponderStart():
-   if not this.trspdr_online:
+def transponderStart(cmdr):
+   if (not this.trspdr_online) or (cmdr is None) or (this.body_name is None) or (this.system_name is None) or (this.nearloc['Latitude'] is None) or (this.nearloc['Longitude'] is None):
+      transponder(False)
       return
    if EliteInForeground():
-      queueScreenshot("")
-      this.label.after(this.trspdr_delay, transponderStart)
+      this.trspdr_count += 1
+      send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot", this.nearloc['Time'])
+      this.label.after(this.trspdr_delay, transponderStart, cmdr)
    else:
       updateInfo("StandBy Mode - Not in Elite Dangerous")
-      this.label.after(5000, transponderStart)
+      this.label.after(5000, transponderStart, cmdr)
 
-def queueScreenshot(SCtype, timestamp = None):
-##   if(this.nearloc['Time']!=None and timestamp!=None):
-##      if(timestamp - this.nearloc['Time'] > 5):
-##         this.queue.put((1, 'takeSC', timestamp, None))
-##         this.SCqueue.put((SCtype))
-##         if(this.debug.get()=="1"):
-##            print "queue Screenshot : type = {}".format(SCtype)
-##   else:
-##   try:
-##      (pnum, mode, data, callback) = this.queue.get(False)
-##      if( pnum != 1 ):
-##         this.queue.put((pnum, mode, data, callback))
-##         this.queue.put((1, 'takeSC', timestamp, None))
-##         this.SCqueue.put((SCtype))
-##         if(this.debug.get()=="1"):
-##            print "queue Screenshot : type = {}".format(SCtype)
-##      else:
-##         this.queue.put((pnum, mode, data, callback))
-##         if(this.debug.get()=="1"):
-##            print "skip queue Screenshot : type = {}".format(SCtype)
-##   except Q.Empty:
-##      this.queue.put((1, 'takeSC', timestamp, None))
-##      this.SCqueue.put((SCtype))
-##      if(this.debug.get()=="1"):
-##         print "empty queue Screenshot : type = {}".format(SCtype)
-   if(this.trySC):
-      if(this.debug.get()=="1"):
-         print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "skip queue Screenshot : type = {}".format(SCtype)
-   else:
-      if(this.nearloc['Time']!=None and timestamp!=None):
-         if(timestamp - this.nearloc['Time'] > 5):
-            this.trySC = True
-            this.queue.put((1, 'takeSC', timestamp, None))
-            this.SCqueue.put((SCtype))
-            if(this.debug.get()=="1"):
-               print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "queue Screenshot (last > 5s) : type = {}".format(SCtype)
-         else:
-            if(this.debug.get()=="1"):
-               print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "skip queue Screenshot (last < 5s) : type = {}".format(SCtype)
-      else:
-         this.trySC = True
-         this.queue.put((1, 'takeSC', timestamp, None))
-         this.SCqueue.put((SCtype))
-         if(this.debug.get()=="1"):
-            print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "queue Screenshot : type = {}".format(SCtype)
-   
-
-def takeScreenshot():
-   if this.trspdr_online and this.ntrySC==0:
-      this.trspdr_count = this.trspdr_count + 1
-   key.PressKey(VK_F10)   # F10
-   time.sleep(0.5)
-   key.ReleaseKey(VK_F10) # F10~
-
-def deleteScreenshot(filename, autoSC):
+def deleteScreenshot(filename):
    if this.scdir.get()!="":
       file = this.scdir.get() + '\\'+ filename[13:]
-      if(autoSC):
-         if(this.deleteautoscreen.get()=="1"):
+      if(this.deletescreen.get()=="1"):
+         if(this.ndelsc==0):
             try:
                os.remove(file)
             except:
                plug.show_error(_("Error: Can't remove {FILE}".format(FILE=file)))
-      else:
-         if(this.deletescreen.get()=="1"):
-            if(this.ndelsc==0):
-               try:
-                  os.remove(file)
-               except:
-                  plug.show_error(_("Error: Can't remove {FILE}".format(FILE=file)))
-            else:
-               this.ndelsc -= 1
+         else:
+            this.ndelsc -= 1
    else:
       plug.show_error(_("Error: Screenshot directory is empty in settings"))
 
