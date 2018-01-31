@@ -274,13 +274,13 @@ def plugin_app(parent):
    
    if this.update:
       if this.new_version:
-         updateInfoURL("New version v"+this.update_version+" available", this.url_website+"EDMC/latest_ExTool.zip", False)
+         updateInfoURL("New version v"+this.update_version+" available", "https://github.com/ExTool/ExTool-EDMC-Plugin/releases/latest", False)
       else:
          updateInfo("v"+this.version+" - Ready", False)
       #this.status2.grid_remove()
       #this.status1 = tk.Label(this.frame, anchor=tk.W, text="v"+this.version+" - Need to relog into Elite Dangerous")
    else:
-      updateInfoURL("Need an update to v"+this.update_version, this.url_website+"EDMC/latest_ExTool.zip", False)
+      updateInfoURL("Need an update to v"+this.update_version, "https://github.com/ExTool/ExTool-EDMC-Plugin/releases/latest", False)
       #this.status1.grid_remove()
       #this.status2 = HyperlinkLabel(this.frame, url = this.url_website+"EDMC/latest_ExTool.zip", popup_copy = True)
       #this.status2["text"] = "Need an update to v"+this.update_version
