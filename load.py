@@ -57,7 +57,7 @@ this.nearloc = dict(this.nearloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "0.8.6.1"
+this.version = "0.8.7_beta"
 this.update = True
 this.new_version = False
 this.update_version = None
@@ -852,7 +852,10 @@ def update_velocity(args):
       this.trspdr_delay = 10000
 
 def check_version():
-   url = this.url_website+"EDMC/version"
+   if this.version[-5:]!="_beta":
+      url = this.url_website+"EDMC/version"
+   else:
+      url = this.url_website+"EDMC/version_beta"
    rsend = this.session.get(url, verify=False)
    if rsend.content[:5] != this.version[:5]:
       this.update_version = rsend.content

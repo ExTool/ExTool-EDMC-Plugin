@@ -1,7 +1,5 @@
 # ExTool-EDMC-Plugin
-A plugin for EDMC
-
-Not work on Linux or Mac platform.
+A plugin for EDMC.
 
 
 # Installation
