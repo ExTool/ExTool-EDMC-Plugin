@@ -1,8 +1,10 @@
 # ExTool-EDMC-Plugin
-A plugin for EDMC
+A plugin for EDMC.
 
-Not work on Linux or Mac platform.
-
+# Dependencies
+Windows has no dependencies. The Win32 extensions do not need to be installed.
+OS X needs the pyobjc-core and pyobjc module installed (in that order).
+Linux needs the python3-xlib (or python-xlib for Python 2) module installed.
 
 # Installation
 Download the [latest release](https://github.com/ExTool/ExTool-EDMC-Plugin/releases/latest), open the archive (zip) and extract the folder to your EDMC plugin folder.
