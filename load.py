@@ -5,7 +5,6 @@ import datetime
 import time
 import requests
 import os
-import key
 from winsound import *
 #from PriorityQueue import Queue
 import Queue as Q
@@ -18,6 +17,15 @@ from ttkHyperlinkLabel import HyperlinkLabel
 from config import config
 import plug
 
+if sys.platform.startswith('Linux'):
+   import key_x11 as key
+elif sys.platform == 'darwin':
+   import key_osx as key
+elif sys.platform == 'win32':
+   import key_win as key
+else:
+   raise NotImplementedError(sys.platform+' is not yet supported by ExTool.')
+
 this = sys.modules[__name__]
 this.session = requests.Session()
 this.queue = Q.PriorityQueue()
@@ -26,9 +34,9 @@ this.cmdr_name = None
 
 _TIMEOUT = 20
 # msdn.microsoft.com/en-us/library/dd375731
-VK_TAB  = 0x09
-VK_MENU = 0x12
-VK_F10 = 0x79
+#VK_TAB  = 0x09
+#VK_MENU = 0x12
+
 
 this.time_lastsend = time.time() - 60
 this.delay = 10
@@ -56,7 +64,7 @@ this.ntrySC = 0
 this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "0.8.6.1"
+this.version = "0.8.7"
 this.update = True
 this.update_version = None
 this.relog = False
@@ -327,6 +335,11 @@ def updateBearing(latitude, longitude, bearing = None, distance = None):
       print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "updateBearing = {} / {}".format(bearing, distance)
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
+   if is_beta:
+      updateInfo("v"+this.version+" - This version is not working on the beta", False)
+      time.sleep(0.01)
+      return
+   
    if this.update:
       if entry['event'] == 'Location':
          this.relog = True
@@ -928,9 +941,9 @@ def queueScreenshot(SCtype, timestamp = None):
 def takeScreenshot():
    if this.trspdr_online and this.ntrySC==0:
       this.trspdr_count = this.trspdr_count + 1
-   key.PressKey(VK_F10)   # F10
+   key.PressKey(key.VK_F10)   # F10
    time.sleep(0.5)
-   key.ReleaseKey(VK_F10) # F10~
+   key.ReleaseKey(key.VK_F10) # F10~
 
 def deleteScreenshot(filename, autoSC):
    if this.scdir.get()!="":

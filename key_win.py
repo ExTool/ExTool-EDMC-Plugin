@@ -1,6 +1,11 @@
+import time
+import sys
 import ctypes
 from ctypes import wintypes
 from ctypes.wintypes import *
+
+if sys.platform !=  'win32':
+    raise Exception('The key_win module should only be loaded on a Windows system.')
 
 user32 = ctypes.WinDLL('user32', use_last_error=True)
 
@@ -74,6 +79,8 @@ user32.SendInput.argtypes = (wintypes.UINT, # nInputs
                              ctypes.c_int)  # cbSize
 
 # Functions
+
+VK_F10 = 0x79 #VK_F10
 
 def PressKey(hexKeyCode):
     x = INPUT(type=INPUT_KEYBOARD,
