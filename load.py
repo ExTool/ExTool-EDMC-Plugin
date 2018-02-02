@@ -858,6 +858,11 @@ def update_velocity(args):
             this.trspdr_delay = max(min(args['TrspdrDelay'],60000),5000)
             if(args['TrspdrDelay'] == 0):
                this.trspdr_delay = 60000
+               if this.survey_online:
+                  this.survey_online = False
+                  if this.trspdrsound.get()=="1":
+                     soundfile = os.path.dirname(this.__file__)+'\\'+'survey_off.wav'
+                     this.queue.put(('playsound', soundfile, None))
          #   transponder(False)
    else:
       this.trspdr_delay = 10000
