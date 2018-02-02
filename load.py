@@ -684,7 +684,7 @@ def send_material(cmdr, category, name, count, timestamp):
       'name' : name,
       'count' : '%d' % count,
       'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp)),
-      'time' : '%d' % round(this.nearloc['Time']-timestamp)
+      'time' : '%d' % round(timestamp-this.nearloc['Time'])
    }
    call(cmdr, 'materials', payload)
 
@@ -699,7 +699,7 @@ def send_datalink(cmdr, message, timestamp):
       'heading' : '{}'.format(this.nearloc['Heading']),
       'message' : message,
       'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp)),
-      'time' : '%d' % round(this.nearloc['Time']-timestamp)
+      'time' : '%d' % round(timestamp-this.nearloc['Time'])
    }
    call(cmdr, 'datalink', payload)
 
@@ -716,7 +716,7 @@ def send_datavoucher(cmdr, reward, victim, payee, timestamp):
       'victim' : victim,
       'payee' : payee,
       'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp)),
-      'time' : '%d' % round(this.nearloc['Time']-timestamp)
+      'time' : '%d' % round(timestamp-this.nearloc['Time'])
    }
    call(cmdr, 'datavoucher', payload)
 
@@ -731,7 +731,7 @@ def send_datascan(cmdr, typescan, timestamp):
       'heading' : '{}'.format(this.nearloc['Heading']),
       'typescan' : typescan,
       'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp)),
-      'time' : '%d' % round(this.nearloc['Time']-timestamp)
+      'time' : '%d' % round(timestamp-this.nearloc['Time'])
    }
    call(cmdr, 'datascan', payload)
 
@@ -757,7 +757,7 @@ def send_savepoint(cmdr, name_point, timestamp):
       'heading' : '{}'.format(this.nearloc['Heading']),
       'name_point' : name_point,
       'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp)),
-      'time' : '%d' % round(this.nearloc['Time']-timestamp)
+      'time' : '%d' % round(timestamp-this.nearloc['Time'])
    }
    call(cmdr, 'savepoint', payload)
 
