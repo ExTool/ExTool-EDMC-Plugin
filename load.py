@@ -368,6 +368,11 @@ def dashboard_entry(cmdr, is_beta, entry):
       #print "landed = {}".format(this.landed)
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
+   if not is_beta:
+      updateInfo("v"+this.version+" - This version is only working on the beta", False)
+      time.sleep(0.01)
+      return
+   
    if this.update:
       if entry['event'] == 'Location':
          transponder(False)
@@ -415,8 +420,14 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          if entry['Message'][:len(this.surveyToggle)].lower() == this.surveyToggle.lower():
             if this.survey_online:
                this.survey_online = False
+               if this.trspdrsound.get()=="1":
+                  soundfile = os.path.dirname(this.__file__)+'\\'+'survey_off.wav'
+                  this.queue.put(('playsound', soundfile, None))
             else:
                this.survey_online = True
+               if this.trspdrsound.get()=="1":
+                  soundfile = os.path.dirname(this.__file__)+'\\'+'survey_on.wav'
+                  this.queue.put(('playsound', soundfile, None))
                   
          if entry['Message'].lower() == this.trspdrToggle.lower():
             if this.autotrspdr.get()=="1":
