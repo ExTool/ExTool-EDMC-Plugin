@@ -66,6 +66,7 @@ this.SCnocoord = 0
 this.url_website = "http://elite.laulhere.com/ExTool/"
 this.version = "0.8.7"
 this.update = True
+this.new_version = False
 this.update_version = None
 this.relog = False
 
@@ -271,11 +272,14 @@ def plugin_app(parent):
    this.bearing_status.grid_remove()
    
    if this.update:
-      updateInfo("v"+this.version+" - Need to relog into Elite Dangerous", False)
+      if this.new_version:
+         updateInfoURL("New version v"+this.update_version+" available", "https://github.com/ExTool/ExTool-EDMC-Plugin/releases/latest", False)
+      else:
+         updateInfo("v"+this.version+" - Ready", False)
       #this.status2.grid_remove()
       #this.status1 = tk.Label(this.frame, anchor=tk.W, text="v"+this.version+" - Need to relog into Elite Dangerous")
    else:
-      updateInfoURL("Need an update to v"+this.update_version, this.url_website+"EDMC/latest_ExTool.zip")
+      updateInfoURL("Need an update to v"+this.update_version, "https://github.com/ExTool/ExTool-EDMC-Plugin/releases/latest", False)
       #this.status1.grid_remove()
       #this.status2 = HyperlinkLabel(this.frame, url = this.url_website+"EDMC/latest_ExTool.zip", popup_copy = True)
       #this.status2["text"] = "Need an update to v"+this.update_version
@@ -301,7 +305,7 @@ def updateInfo(msg, withTime = True):
    if(this.debug.get()=="1"):
       print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "updateInfo = {}".format(msg)
 
-def updateInfoURL(msg, url):
+def updateInfoURL(msg, url, withTime = True):
    #this.status["text"] = ""
    #this.status.grid_remove()
    #this.status = HyperlinkLabel(this.frame, popup_copy = True)
@@ -311,8 +315,11 @@ def updateInfoURL(msg, url):
    #   this.info = False
    #   this.status2.grid()
    #   this.infoURL = True
-   this.status["text"] = datetime.datetime.now().strftime("%H:%M") + " - " + msg
    this.status["url"] = url
+   if withTime:
+      this.status["text"] = datetime.datetime.now().strftime("%H:%M") + " - " + msg
+   else:
+      this.status["text"] = msg
    #this.status.grid(row = 0, column = 1, sticky=tk.W)
    
    if(this.debug.get()=="1"):
@@ -859,6 +866,11 @@ def check_version():
    if rsend.content[:5] != this.version[:5]:
       this.update_version = rsend.content
       this.update = False
+      this.new_version = True
+   else:
+      if rsend.content != this.version:
+         this.update_version = rsend.content
+         this.new_version = True
 
 def transponder(status):
    if(this.debug.get()=="1"):
