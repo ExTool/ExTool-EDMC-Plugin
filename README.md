@@ -1,14 +1,12 @@
 # ExTool-EDMC-Plugin
-A plugin for EDMC.
+ExTool is a planetary Exploration Tool and a plugin for EDMC.
+Website : http://elite.laulhere.com/ExTool/
+More information on the [about page](http://elite.laulhere.com/ExTool/index.php?mode=about).
 
+## Installation
 
-# Installation
-Download the [latest release](https://github.com/ExTool/ExTool-EDMC-Plugin/releases/latest), open the archive (zip) and extract the folder to your EDMC plugin folder.
+* On EDMC's Plugins settings tab press the “Open” button. This reveals the `plugins` folder where EDMC looks for plugins.
+* Download the [latest release](https://github.com/ExTool/ExTool-EDMC-Plugin/releases/latest).
+* Open the `.zip` archive that you downloaded and move the `ExTool` folder contained inside into the `plugins` folder.
 
-Rename the folder to ExTool
-
-* Windows: `%LOCALAPPDATA%\EDMarketConnector\plugins` (usually `C:\Users\you\AppData\Local\EDMarketConnector\plugins`).
-* Mac: `~/Library/Application Support/EDMarketConnector/plugins` (in Finder hold ⌥ and choose Go &rarr; Library to open your `~/Library` folder).
-* Linux: `$XDG_DATA_HOME/EDMarketConnector/plugins`, or `~/.local/share/EDMarketConnector/plugins` if `$XDG_DATA_HOME` is unset.
-
-You will need to re-start EDMC for it to notice the plugin.
+You will need to re-start EDMC for it to notice the new plugin.
