@@ -57,7 +57,7 @@ this.nearloc = dict(this.nearloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "0.8.7_beta"
+this.version = "0.9"
 this.update = True
 this.new_version = False
 this.update_version = None
@@ -368,8 +368,8 @@ def dashboard_entry(cmdr, is_beta, entry):
       #print "landed = {}".format(this.landed)
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
-   if not is_beta:
-      updateInfo("v"+this.version+" - This version is only working on the beta", False)
+   if is_beta:
+      updateInfo("v"+this.version+" - This version is only working on ED v3.0", False)
       time.sleep(0.01)
       return
    
