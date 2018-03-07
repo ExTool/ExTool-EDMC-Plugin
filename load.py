@@ -6,6 +6,7 @@ import time
 import requests
 import os
 import key
+import math
 from winsound import *
 #from PriorityQueue import Queue
 import Queue as Q
@@ -40,6 +41,9 @@ this.droped = []
 
 this.system_name = None
 this.body_name = None
+this.lat_dest = None
+this.lon_dest = None
+this.radius = None
 
 this.nearloc = {
    'Latitude' : None,
@@ -50,6 +54,15 @@ this.nearloc = {
 }
 this.nearloc = dict(this.nearloc)
 
+this.lastloc = {
+   'Latitude' : None,
+   'Longitude' : None,
+   'Altitude' : None,
+   'Heading' : None,
+   'Time' : None
+}
+this.lastloc = dict(this.lastloc)
+
 #this.SCnoalt = ""
 #this.altitude = 0
 #this.trySC = False
@@ -57,7 +70,7 @@ this.nearloc = dict(this.nearloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "0.9"
+this.version = "0.9.1"
 this.update = True
 this.new_version = False
 this.update_version = None
@@ -359,8 +372,39 @@ def dashboard_entry(cmdr, is_beta, entry):
             update_nearloc(entry['Latitude'], entry['Longitude'], 0, entry['Heading'], timestamp)
          
          if this.autotrspdr.get()=="1":
-            transponder(True, cmdr)
-            #print "Survey = {}".format(this.survey_online)
+            if not this.trspdr_online:
+               transponder(True, cmdr)
+               #print "Survey = {}".format(this.survey_online)
+
+         if this.trspdr_online:
+            if(this.debug.get()=="1"):
+               print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "TRSPDR count = {}".format(this.trspdr_count)
+            if this.trspdr_count>=1:
+               dist = calc_distance(this.nearloc['Latitude'], this.nearloc['Longitude'], this.lastloc['Latitude'], this.lastloc['Longitude'], this.radius)
+               if(this.SRVmode):
+                  maxalt = 0.5
+               else:
+                  maxalt = 2.
+               if(this.debug.get()=="1"):
+                  print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "TRSPDR try = {} >= {}".format(dist,max(maxalt,this.nearloc['Altitude']))
+               if (dist >= max(maxalt,this.nearloc['Altitude'])):
+                  this.trspdr_count += 1
+                  update_lastloc(this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], this.nearloc['Time'])
+                  send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot", this.nearloc['Time'])
+            else:
+               this.trspdr_count += 1
+               update_lastloc(this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], this.nearloc['Time'])
+               send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot", this.nearloc['Time'])
+
+         if (this.lat_dest is not None) and (this.lon_dest is not None):
+            dist = calc_distance(this.nearloc['Latitude'], this.nearloc['Longitude'], this.lat_dest, this.lon_dest, this.radius)
+            brng = calc_bearing(this.nearloc['Latitude'], this.nearloc['Longitude'], this.lat_dest, this.lon_dest, this.radius)
+            updateBearing(this.lat_dest, this.lon_dest, round(brng,2), round(dist,3))
+         else:
+            if this.bearing:
+               this.bearing = False
+               this.bearing_status.grid_remove()
+         
       else:
          this.body_name = None
          update_nearloc(None, None, None, None, timestamp)
@@ -435,7 +479,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
                transponder(False)
             else:
                this.autotrspdr = tk.StringVar(value="1")
-               transponder(True, cmdr)
+               #transponder(True, cmdr)
             #if this.trspdr_online:
             #   transponder(False)
             #else:
@@ -462,6 +506,8 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
                      print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "Error: #ExTool DEST need to have lat lon"
             except:
                updateInfo("Unset destination")
+               this.lat_dest = None
+               this.lon_dest = None
                send_destination(cmdr, 0, 0, 0)
                if this.bearing:
                   this.bearing = False
@@ -595,6 +641,13 @@ def update_nearloc(latitude, longitude, altitude, heading, timestamp):
    #if(this.debug.get()=="1"):
    #   print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "update nearloc to ({},{}) A{} H{} at {}".format(this.nearloc['Latitude'],this.nearloc['Longitude'],this.nearloc['Altitude'],this.nearloc['Heading'],this.nearloc['Time'])
 
+def update_lastloc(latitude, longitude, altitude, heading, timestamp):
+   this.lastloc['Latitude'] = latitude
+   this.lastloc['Longitude'] = longitude
+   this.lastloc['Altitude'] = altitude
+   this.lastloc['Heading'] = heading
+   this.lastloc['Time'] = timestamp
+
 def send_data(cmdr, latitude, longitude, altitude, heading, event, timestamp):
    #if (time.time()>this.time_lastsend+this.delay):
    
@@ -606,8 +659,7 @@ def send_data(cmdr, latitude, longitude, altitude, heading, event, timestamp):
          trspdr_status = "1"
       else:
          trspdr_status = "0"
-
-      if(not this.survey_online or altitude is None):
+      if(not EliteInForeground() or not this.survey_online or altitude is None):
          event += ' NA'
       elif(this.landed):
          event += ' L'
@@ -659,10 +711,10 @@ def send_data(cmdr, latitude, longitude, altitude, heading, event, timestamp):
    new_url = this.url_website+"index.php?mode=3d&planet={}&goto={},{}".format(this.body_name, latitude, longitude)
    updateInfoURL(new_text, new_url)
 
-   if(trspdr_status=="1") :
-      call(cmdr, 'coords', payload, callback=update_velocity)
-   else:
-      call(cmdr, 'coords', payload)
+   #if(trspdr_status=="1") :
+   #   call(cmdr, 'coords', payload, callback=update_velocity)
+   #else:
+   call(cmdr, 'coords', payload)
 
    
    if(event=='Screenshot' or event=='Screenshot SC' or event=='Screenshot NA' or event=='Screenshot L' or event=='Screenshot SAVE' or event=='Screenshot MAT' or event=='Screenshot SCAN'):
@@ -808,12 +860,12 @@ def worker():
                      #print datetime.datetime.now().strftime("%H:%M:%S") + " - " + data.encode('ascii', 'ignore')
                else:
                   if(code==100):
-                     if ('Bearing' in reply):
-                        lat_dest = reply['Latitude_Dest']
-                        lon_dest = reply['Longitude_Dest']
-                        bearing = reply['Bearing']
-                        distance = reply['Distance']
-                        updateBearing(lat_dest,lon_dest,bearing,distance)
+                     if ('Latitude_Dest' in reply and 'Longitude_Dest' in reply):
+                        this.lat_dest = reply['Latitude_Dest']
+                        this.lon_dest = reply['Longitude_Dest']
+                     if ('Radius' in reply):
+                        this.radius = reply['Radius']
+                     #print "lala = {} {} {}".format(this.lat_dest,this.lon_dest,this.radius)
                if callback:
                   callback(reply)
                break
@@ -844,6 +896,44 @@ def call(cmdr, sendmode, args, callback=None):
    if(this.debug.get()=="1"):
       print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "call : {}".format(sendmode)
    this.queue.put(('senddata', args, callback))
+
+def calc_distance(phi_a, lambda_a, phi_b, lambda_b, radius):
+
+   if radius is None:
+      return 0.0
+   
+   phi_a = phi_a * math.pi / 180.
+   lambda_a = lambda_a * math.pi / 180.
+   phi_b = phi_b * math.pi / 180.
+   lambda_b = lambda_b * math.pi / 180.
+
+   if(phi_a != phi_b or lambda_b != lambda_a):
+      d_lambda = lambda_b - lambda_a
+      S_ab = math.acos(math.sin(phi_a)*math.sin(phi_b)+math.cos(phi_a)*math.cos(phi_b)*math.cos(d_lambda))
+      return S_ab * radius
+   else:
+      return 0.0
+
+def calc_bearing(phi_a, lambda_a, phi_b, lambda_b, radius):
+
+   if radius is None:
+      return 0.0
+   
+   phi_a = phi_a * math.pi / 180.
+   lambda_a = lambda_a * math.pi / 180.
+   phi_b = phi_b * math.pi / 180.
+   lambda_b = lambda_b * math.pi / 180.
+
+   if(phi_a != phi_b or lambda_b != lambda_a):
+      d_lambda = lambda_b - lambda_a
+      y = math.sin(d_lambda)*math.cos(phi_b)
+      x = math.cos(phi_a)*math.sin(phi_b)-math.sin(phi_a)*math.cos(phi_b)*math.cos(d_lambda)
+      brng = math.atan2(y,x)*180./math.pi
+      if brng<0:
+         brng += 360.
+      return brng
+   else:
+      return 0.0
 
 def update_velocity(args):
    if ('TrspdrDelay' in args) and ('Velocity' in args):
@@ -896,7 +986,7 @@ def transponder(status, cmdr = None):
          if this.trspdrsound.get()=="1":
             soundfile = os.path.dirname(this.__file__)+'\\'+'trspdr_on.wav'
             this.queue.put(('playsound', soundfile, None))
-         transponderStart(cmdr)
+         #transponderStart(cmdr)
    else:
       if this.trspdr_online:
          this.trspdr_online = False
