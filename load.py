@@ -70,7 +70,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "0.9.1"
+this.version = "0.9.1.1"
 this.update = True
 this.new_version = False
 this.update_version = None
@@ -110,6 +110,8 @@ if(config.get("ExTool_AutoSurvey")==None):
 #   config.set("ExTool_Altitude", "0")
 #if(config.get("ExTool_AltiSound")==None):
 #   config.set("ExTool_AltiSound", "1")
+if(config.get("ExTool_MatSound")==None):
+   config.set("ExTool_MatSound", "0")
 if(config.get("ExTool_DestSound")==None):
    config.set("ExTool_DestSound", "1")
 if(config.get("ExTool_DeleteAutoScreen")==None):
@@ -139,6 +141,7 @@ def plugin_start():
    this.surveysound = tk.StringVar(value=config.get("ExTool_SurveySound"))
    this.autosurvey = tk.StringVar(value=config.get("ExTool_AutoSurvey"))
 
+   this.matsound = tk.StringVar(value=config.get("ExTool_MatSound"))
    this.destsound = tk.StringVar(value=config.get("ExTool_DestSound"))
 
    this.debug = tk.StringVar(value=config.get("ExTool_Debug"))
@@ -227,6 +230,9 @@ def plugin_prefs(parent, cmdr, is_beta):
    surveysound_checkbox = nb.Checkbutton(frame, text="Play sound when using survey", variable=this.surveysound)
    surveysound_checkbox.grid(columnspan=2, padx = BUTTONX, pady = PADY, sticky=tk.W)
    
+   matsound_checkbox = nb.Checkbutton(frame, text="Play sound when scanning or collecting materials", variable=this.matsound)
+   matsound_checkbox.grid(columnspan=2, padx = BUTTONX, pady = PADY, sticky=tk.W)
+   
    #trspdrtoggle_label = nb.Label(frame, text="Transponder des/activation toggle :")
    #trspdrtoggle_label.grid(row=19, padx=PADX, sticky=tk.W)
    #trspdrtoggle_entry = nb.Entry(frame, textvariable=this.trspdr_toggle)
@@ -257,12 +263,13 @@ def prefs_changed(cmdr, is_beta):
    config.set("ExTool_TrspdrSound", this.trspdrsound.get())
    
    config.set("ExTool_AutoSurvey", this.autosurvey.get())
-   config.set("ExTool_SurveySound", this.trspdrsound.get())
+   config.set("ExTool_SurveySound", this.surveysound.get())
    
    config.set("ExTool_SCDIR", this.scdir.get())
    #config.set("ExTool_DeleteAutoScreen", this.deleteautoscreen.get())
    config.set("ExTool_DeleteScreen", this.deletescreen.get())
-   
+
+   config.set("ExTool_MatSound", this.matsound.get())
    config.set("ExTool_DestSound", this.destsound.get())
 
    config.set("ExTool_Debug", this.debug.get())
@@ -375,7 +382,11 @@ def dashboard_entry(cmdr, is_beta, entry):
             if not this.trspdr_online:
                transponder(True, cmdr)
                #print "Survey = {}".format(this.survey_online)
-
+         else:
+            if this.survey_online:
+               if not this.trspdr_online:
+                  transponder(True, cmdr)
+         
          if this.trspdr_online:
             if(this.debug.get()=="1"):
                print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "TRSPDR count = {}".format(this.trspdr_count)
@@ -407,7 +418,7 @@ def dashboard_entry(cmdr, is_beta, entry):
          
       else:
          this.body_name = None
-         update_nearloc(None, None, None, None, timestamp)
+         update_nearloc(None, None, None, None, None)
          transponder(False)
       #print "landed = {}".format(this.landed)
 
@@ -433,6 +444,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          updateInfo("v"+this.version+" - Ready", False)
 
       if entry['event'] == 'StartUp':
+         update_nearloc(None, None, None, None, None)
          transponder(False)
          if ('StarSystem' in entry):
             this.system_name = entry['StarSystem']
@@ -442,9 +454,10 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          updateInfo("v"+this.version+" - Ready", False)
 
       if entry['event'] == 'ShutDown':
-         transponder(False)
          this.system_name = None
          this.body_name = None
+         update_nearloc(None, None, None, None, None)
+         transponder(False)
          this.droped = []
          updateInfo("v"+this.version+" - Ready", False)
 
@@ -464,18 +477,25 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          if entry['Message'][:len(this.surveyToggle)].lower() == this.surveyToggle.lower():
             if this.survey_online:
                this.survey_online = False
-               if this.trspdrsound.get()=="1":
+               if this.autotrspdr.get()=="0":
+                  transponder(False)
+               if this.surveysound.get()=="1":
                   soundfile = os.path.dirname(this.__file__)+'\\'+'survey_off.wav'
                   this.queue.put(('playsound', soundfile, None))
             else:
                this.survey_online = True
-               if this.trspdrsound.get()=="1":
+               if this.surveysound.get()=="1":
                   soundfile = os.path.dirname(this.__file__)+'\\'+'survey_on.wav'
                   this.queue.put(('playsound', soundfile, None))
                   
          if entry['Message'].lower() == this.trspdrToggle.lower():
             if this.autotrspdr.get()=="1":
                this.autotrspdr = tk.StringVar(value="0")
+               if this.survey_online:
+                  this.survey_online = False
+                  if this.surveysound.get()=="1":
+                     soundfile = os.path.dirname(this.__file__)+'\\'+'survey_off.wav'
+                     this.queue.put(('playsound', soundfile, None))
                transponder(False)
             else:
                this.autotrspdr = tk.StringVar(value="1")
@@ -570,6 +590,20 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
                timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
                send_data(cmdr, entry['Latitude'], entry['Longitude'], None, None, entry['event'], timestamp)
 
+      if entry['event'] == 'Docked':
+         if entry['StationType'] == 'SurfaceStation':
+            this.landed = True
+            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+            send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], None, None, 'Touchdown', timestamp)
+            send_surfacestation(cmdr, entry['StationName'], entry['MarketID'], timestamp)
+      if entry['event'] == 'Undocked':
+         if entry['StationType'] == 'SurfaceStation':
+            this.landed = False
+            this.droped = []
+            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+            send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], None, None, 'Liftoff', timestamp)
+            send_surfacestation(cmdr, entry['StationName'], entry['MarketID'], timestamp)
+
       if entry['event'] == 'StartJump':
          this.SCmode = True
          if entry['JumpType'] == 'Hyperspace':
@@ -598,6 +632,11 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          transponder(False)
          this.system_name = entry['StarSystem']
          this.body_name = None
+
+      if entry['event'] == 'ApproachSettlement':
+         if(this.body_name is not None):
+            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+            send_settlement(cmdr, entry['Name'], entry['MarketID'], timestamp)
          
       if entry['event'] == 'CollectCargo':
          if this.landed:
@@ -717,7 +756,7 @@ def send_data(cmdr, latitude, longitude, altitude, heading, event, timestamp):
    call(cmdr, 'coords', payload)
 
    
-   if(event=='Screenshot' or event=='Screenshot SC' or event=='Screenshot NA' or event=='Screenshot L' or event=='Screenshot SAVE' or event=='Screenshot MAT' or event=='Screenshot SCAN'):
+   if(event=='Screenshot' or event=='Screenshot SC' or event=='Screenshot NA' or event=='Screenshot L'):
       if(trspdr_status=="1") :
          if(this.survey_online):
             if(this.trspdrsound.get()=="1" or this.surveysound.get()=="1") :
@@ -728,6 +767,10 @@ def send_data(cmdr, latitude, longitude, altitude, heading, event, timestamp):
                soundfile = 'snd_good.wav'
                this.queue.put(('playsound', soundfile, None))
       else:
+         soundfile = 'snd_good.wav'
+         this.queue.put(('playsound', soundfile, None))
+   elif(event=='Screenshot MAT' or event=='Screenshot SCAN'):
+      if(this.matsound.get()=="1"):
          soundfile = 'snd_good.wav'
          this.queue.put(('playsound', soundfile, None))
 
@@ -832,6 +875,36 @@ def send_delpoint(cmdr, name_point):
       'name_point' : name_point
    }
    call(cmdr, 'delpoint', payload)
+
+def send_surfacestation(cmdr, name_settlement, marketID, timestamp):
+   url = this.url_website+"send_data"
+   payload = {
+      'system' : this.system_name,
+      'body' : this.body_name,
+      'latitude' : '{}'.format(this.nearloc['Latitude']),
+      'longitude' : '{}'.format(this.nearloc['Longitude']),
+      'name_settlement' : name_settlement,
+      'marketID' : '{}'.format(marketID),
+      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp)),
+      'time' : '%d' % round(timestamp-this.nearloc['Time'])
+   }
+   call(cmdr, 'surfacestation', payload)
+
+def send_settlement(cmdr, name_settlement, marketID, timestamp):
+   url = this.url_website+"send_data"
+   payload = {
+      'system' : this.system_name,
+      'body' : this.body_name,
+      'latitude' : '{}'.format(this.nearloc['Latitude']),
+      'longitude' : '{}'.format(this.nearloc['Longitude']),
+      'altitude' : '{}'.format(this.nearloc['Altitude']),
+      'heading' : '{}'.format(this.nearloc['Heading']),
+      'name_settlement' : name_settlement,
+      'marketID' : '{}'.format(marketID),
+      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp)),
+      'time' : '%d' % round(timestamp-this.nearloc['Time'])
+   }
+   call(cmdr, 'settlement', payload)
 
 # Worker thread
 def worker():
