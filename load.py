@@ -34,6 +34,7 @@ this.time_lastsend = time.time() - 60
 this.delay = 10
 this.trspdr_delay = 10000
 
+this.StartJump = False
 this.SCmode = False
 this.SRVmode = False
 this.landed = False
@@ -70,7 +71,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "0.9.1.1"
+this.version = "0.9.1.2"
 this.update = True
 this.new_version = False
 this.update_version = None
@@ -606,6 +607,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
 
       if entry['event'] == 'StartJump':
          this.SCmode = True
+         this.StartJump = True
          if entry['JumpType'] == 'Hyperspace':
             transponder(False)
             this.system_name = entry['StarSystem']
@@ -613,6 +615,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
       
       if entry['event'] == 'SupercruiseEntry':
          this.SCmode = True
+         this.StartJump = False
          this.system_name = entry['StarSystem']
       if entry['event'] == 'SupercruiseExit':
          this.SCmode = False
@@ -636,7 +639,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
       if entry['event'] == 'ApproachSettlement':
          if(this.body_name is not None):
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-            send_settlement(cmdr, entry['Name'], entry['MarketID'], timestamp)
+            send_settlement(cmdr, entry['Name'], entry['MarketID'], this.StartJump, timestamp)
          
       if entry['event'] == 'CollectCargo':
          if this.landed:
@@ -890,7 +893,7 @@ def send_surfacestation(cmdr, name_settlement, marketID, timestamp):
    }
    call(cmdr, 'surfacestation', payload)
 
-def send_settlement(cmdr, name_settlement, marketID, timestamp):
+def send_settlement(cmdr, name_settlement, marketID, startJump, timestamp):
    url = this.url_website+"send_data"
    payload = {
       'system' : this.system_name,
@@ -901,6 +904,7 @@ def send_settlement(cmdr, name_settlement, marketID, timestamp):
       'heading' : '{}'.format(this.nearloc['Heading']),
       'name_settlement' : name_settlement,
       'marketID' : '{}'.format(marketID),
+      'startJump' : '{}'.format(startJump),
       'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp)),
       'time' : '%d' % round(timestamp-this.nearloc['Time'])
    }
