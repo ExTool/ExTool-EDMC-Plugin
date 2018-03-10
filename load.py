@@ -71,7 +71,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "0.9.1.2"
+this.version = "0.9.1.3"
 this.update = True
 this.new_version = False
 this.update_version = None
@@ -612,6 +612,10 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             transponder(False)
             this.system_name = entry['StarSystem']
             this.body_name = None
+      
+      if entry['event'] == 'FSDJump':
+         this.SCmode = True
+         this.StartJump = False
       
       if entry['event'] == 'SupercruiseEntry':
          this.SCmode = True
