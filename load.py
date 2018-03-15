@@ -18,6 +18,8 @@ from ttkHyperlinkLabel import HyperlinkLabel
 
 from config import config
 import plug
+import overlay
+from overlay import display
 
 this = sys.modules[__name__]
 this.session = requests.Session()
@@ -359,7 +361,7 @@ def updateBearing(latitude, longitude, bearing = None, distance = None):
       this.bearing_status["text"] = "   DEST ({},{}) : Waiting for a screenshot...".format(latitude, longitude)
    else:
       this.bearing_status["text"] = "   DEST ({},{}) : BEARING {} / DIST {} km".format(latitude, longitude, bearing, distance)
-   #this.status.grid(row = 0, column = 1, sticky=tk.W)
+      display(this.bearing_status["text"], 250,730, "yellow", "normal")    
    
    if(this.debug.get()=="1"):
       print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "updateBearing = {} / {}".format(bearing, distance)
