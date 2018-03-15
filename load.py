@@ -1076,6 +1076,9 @@ def transponder(status, cmdr = None):
          if this.trspdrsound.get()=="1":
             soundfile = os.path.dirname(this.__file__)+'\\'+'trspdr_off.wav'
             this.queue.put(('playsound', soundfile, None))
+         if this.surveysound.get()=="1":
+            soundfile = os.path.dirname(this.__file__)+'\\'+'survey_off.wav'
+            this.queue.put(('playsound', soundfile, None))
 
 def transponderStart(cmdr):
    if (not this.trspdr_online) or (cmdr is None) or (this.body_name is None) or (this.system_name is None) or (this.nearloc['Latitude'] is None) or (this.nearloc['Longitude'] is None):
