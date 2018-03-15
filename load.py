@@ -73,7 +73,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "0.9.1.3"
+this.version = "0.9.1.4"
 this.update = True
 this.new_version = False
 this.update_version = None

@@ -13,7 +13,7 @@ You will need to re-start EDMC for it to notice the new plugin.
 
 ## EDMCOverlay
 
-ExTool has support for the [EDMCOverlay](https://github.com/inorton/EDMCOverlay) plugin. 
+ExTool has support for the [EDMCOverlay](https://github.com/inorton/EDMCOverlay) plugin (Thx to LCU No Fool Like One). 
 If the [EDMCOverlay](https://github.com/inorton/EDMCOverlay) plugin is installed then the details of the current destination are displayed in the HUD
 If you do not install [EDMCOverlay](https://github.com/inorton/EDMCOverlay) then ExTool will work as normal.
 
