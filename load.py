@@ -44,6 +44,7 @@ this.droped = []
 
 this.system_name = None
 this.body_name = None
+this.coordinates = None
 this.lat_dest = None
 this.lon_dest = None
 this.radius = None
@@ -444,6 +445,10 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             this.landed = True
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_data(cmdr, entry['Latitude'], entry['Longitude'], None, None, entry['event'], timestamp)
+         if ('StarPos' in entry):
+            this.coordinates = entry['StarPos']
+            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+            send_coordinates(cmdr, this.coordinates, timestamp)
          updateInfo("v"+this.version+" - Ready", False)
 
       if entry['event'] == 'StartUp':
@@ -618,6 +623,10 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
       if entry['event'] == 'FSDJump':
          this.SCmode = True
          this.StartJump = False
+         if ('StarPos' in entry):
+            this.coordinates = entry['StarPos']
+            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+            send_coordinates(cmdr, this.coordinates, timestamp)
       
       if entry['event'] == 'SupercruiseEntry':
          this.SCmode = True
@@ -915,6 +924,18 @@ def send_settlement(cmdr, name_settlement, marketID, startJump, timestamp):
       'time' : '%d' % round(timestamp-this.nearloc['Time'])
    }
    call(cmdr, 'settlement', payload)
+
+def send_coordinates(cmdr, coordinates, timestamp):
+   url = this.url_website+"send_data"
+   #timestamp = time.localtime(timestamp)
+   #timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
+   #timestamp = time.mktime(time.strptime(timestamp, '%Y-%m-%d %H:%M:%S'))
+   payload = {
+      'system' : this.system_name,
+      'syscoords' : '{}'.format(coordinates),
+      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
+   }
+   call(cmdr, 'coordinates', payload)
 
 # Worker thread
 def worker():
