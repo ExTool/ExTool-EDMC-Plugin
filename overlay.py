@@ -3,17 +3,11 @@ import sys
 import datetime
 import time
 
-
-_thisdir = os.path.abspath(os.path.dirname(__file__))
-_overlay_dir = os.path.join(_thisdir, "../EDMCOverlay")
-if _overlay_dir not in sys.path:
-    print "adding {} to sys.path".format(_overlay_dir)
-    sys.path.append(_overlay_dir)
-
 try:
     import edmcoverlay
     _overlay = None
     _overlay = edmcoverlay.Overlay()
+    print "ExTool: EDMCOverlay imported"
 except ImportError:
     print "ExTool: EDMCOverlay not imported but that is ok"
     

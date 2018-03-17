@@ -74,7 +74,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "0.9.1.5"
+this.version = "0.9.1.6"
 this.update = True
 this.new_version = False
 this.update_version = None
@@ -358,11 +358,9 @@ def updateBearing(latitude, longitude, bearing = None, distance = None):
    if not this.bearing:
       this.bearing = True
       this.bearing_status.grid()
-   if(bearing is None):
-      this.bearing_status["text"] = "   DEST ({},{}) : Waiting for a screenshot...".format(latitude, longitude)
-   else:
-      this.bearing_status["text"] = "   DEST ({},{}) : BEARING {} / DIST {} km".format(latitude, longitude, bearing, distance)
-      display(this.bearing_status["text"], 250,730, "yellow", "normal")    
+
+   this.bearing_status["text"] = "   DEST ({},{}) : BEARING {} / DIST {} km".format(latitude, longitude, bearing, distance)
+   display(this.bearing_status["text"], 250,730, "yellow", "normal")    
    
    if(this.debug.get()=="1"):
       print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "updateBearing = {} / {}".format(bearing, distance)
@@ -410,10 +408,10 @@ def dashboard_entry(cmdr, is_beta, entry):
                this.trspdr_count += 1
                update_lastloc(this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], this.nearloc['Time'])
                send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot", this.nearloc['Time'])
-
-         if (this.lat_dest is not None) and (this.lon_dest is not None):
-            dist = calc_distance(this.nearloc['Latitude'], this.nearloc['Longitude'], this.lat_dest, this.lon_dest, this.radius)
-            brng = calc_bearing(this.nearloc['Latitude'], this.nearloc['Longitude'], this.lat_dest, this.lon_dest, this.radius)
+         
+         if (this.lat_dest is not None) and (this.lon_dest is not None) and (this.body_name is not None):
+            dist = calc_distance(this.nearloc['Latitude'], this.nearloc['Longitude'], float(this.lat_dest), float(this.lon_dest), this.radius)
+            brng = calc_bearing(this.nearloc['Latitude'], this.nearloc['Longitude'], float(this.lat_dest), float(this.lon_dest), this.radius)
             updateBearing(this.lat_dest, this.lon_dest, round(brng,2), round(dist,3))
          else:
             if this.bearing:
@@ -424,6 +422,11 @@ def dashboard_entry(cmdr, is_beta, entry):
          this.body_name = None
          update_nearloc(None, None, None, None, None)
          transponder(False)
+         this.lat_dest = None
+         this.lon_dest = None
+         if this.bearing:
+            this.bearing = False
+            this.bearing_status.grid_remove()
       #print "landed = {}".format(this.landed)
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
@@ -466,6 +469,11 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          this.body_name = None
          update_nearloc(None, None, None, None, None)
          transponder(False)
+         this.lat_dest = None
+         this.lon_dest = None
+         if this.bearing:
+            this.bearing = False
+            this.bearing_status.grid_remove()
          this.droped = []
          updateInfo("v"+this.version+" - Ready", False)
 
@@ -517,17 +525,21 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
                
          if entry['Message'][:len(this.setdestToggle)].lower() == this.setdestToggle.lower():
             try:
-               if(this.nearloc['Latitude'] is not None and this.nearloc['Longitude'] is not None):
+               print "body = {}".format(this.body_name)
+               if(this.nearloc['Latitude'] is not None and this.nearloc['Longitude'] is not None and this.body_name is not None):
                   coord_dest = entry['Message'][len(this.setdestToggle)+1:].strip("()").split(",")
-                  latitude = coord_dest[0]
-                  longitude = coord_dest[1]
+                  this.lat_dest = coord_dest[0]
+                  this.lon_dest = coord_dest[1]
                   if this.destsound.get()=="1":
                      soundfile = os.path.dirname(this.__file__)+'\\'+'new_destination.wav'
                      this.queue.put(('playsound', soundfile, None))
-                  updateInfo("Set destination to ({},{})".format(latitude, longitude))
+                  updateInfo("Set destination to ({},{})".format(this.lat_dest, this.lon_dest))
                   timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-                  send_destination(cmdr, 1, latitude, longitude)
+                  send_destination(cmdr, 1, this.lat_dest, this.lon_dest)                  
                   send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot DEST", this.nearloc['Time'])
+                  dist = calc_distance(this.nearloc['Latitude'], this.nearloc['Longitude'], float(this.lat_dest), float(this.lon_dest), this.radius)
+                  brng = calc_bearing(this.nearloc['Latitude'], this.nearloc['Longitude'], float(this.lat_dest), float(this.lon_dest), this.radius)
+                  updateBearing(this.lat_dest, this.lon_dest, round(brng,2), round(dist,3))
                else:
                   plug.show_error(_('Error: #ExTool DEST need to have lat lon'))
                   if(this.debug.get()=="1"):
@@ -964,11 +976,13 @@ def worker():
                      #print datetime.datetime.now().strftime("%H:%M:%S") + " - " + data.encode('ascii', 'ignore')
                else:
                   if(code==100):
-                     if ('Latitude_Dest' in reply and 'Longitude_Dest' in reply):
+                     if ('Latitude_Dest' in reply and 'Longitude_Dest' in reply and 'Radius' in reply):
                         this.lat_dest = reply['Latitude_Dest']
                         this.lon_dest = reply['Longitude_Dest']
-                     if ('Radius' in reply):
                         this.radius = reply['Radius']
+                     else:
+                        this.lat_dest = None
+                        this.lon_dest = None
                      #print "lala = {} {} {}".format(this.lat_dest,this.lon_dest,this.radius)
                if callback:
                   callback(reply)
@@ -1094,14 +1108,15 @@ def transponder(status, cmdr = None):
    else:
       if this.trspdr_online:
          this.trspdr_online = False
-         this.survey_online = False
          updateInfo("Transponder deactivated")
          if this.trspdrsound.get()=="1":
             soundfile = os.path.dirname(this.__file__)+'\\'+'trspdr_off.wav'
             this.queue.put(('playsound', soundfile, None))
-         if this.surveysound.get()=="1":
-            soundfile = os.path.dirname(this.__file__)+'\\'+'survey_off.wav'
-            this.queue.put(('playsound', soundfile, None))
+         if this.survey_online:
+            this.survey_online = False
+            if this.surveysound.get()=="1":
+               soundfile = os.path.dirname(this.__file__)+'\\'+'survey_off.wav'
+               this.queue.put(('playsound', soundfile, None))
 
 def transponderStart(cmdr):
    if (not this.trspdr_online) or (cmdr is None) or (this.body_name is None) or (this.system_name is None) or (this.nearloc['Latitude'] is None) or (this.nearloc['Longitude'] is None):
