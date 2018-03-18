@@ -74,7 +74,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "0.9.1.6"
+this.version = "0.9.1.7"
 this.update = True
 this.new_version = False
 this.update_version = None
@@ -976,13 +976,14 @@ def worker():
                      #print datetime.datetime.now().strftime("%H:%M:%S") + " - " + data.encode('ascii', 'ignore')
                else:
                   if(code==100):
-                     if ('Latitude_Dest' in reply and 'Longitude_Dest' in reply and 'Radius' in reply):
+                     if ('Latitude_Dest' in reply and 'Longitude_Dest' in reply):
                         this.lat_dest = reply['Latitude_Dest']
                         this.lon_dest = reply['Longitude_Dest']
-                        this.radius = reply['Radius']
                      else:
                         this.lat_dest = None
                         this.lon_dest = None
+                     if('Radius' in reply):
+                        this.radius = reply['Radius']
                      #print "lala = {} {} {}".format(this.lat_dest,this.lon_dest,this.radius)
                if callback:
                   callback(reply)
@@ -1017,6 +1018,10 @@ def call(cmdr, sendmode, args, callback=None):
 
 def calc_distance(phi_a, lambda_a, phi_b, lambda_b, radius):
 
+   if(this.debug.get()=="1"):
+      print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "calc_distance"
+      print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "{} {} {} {} {}".format(phi_a, lambda_a, phi_b, lambda_b, radius)
+      
    if radius is None:
       return 0.0
    
