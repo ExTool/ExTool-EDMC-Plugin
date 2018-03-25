@@ -47,6 +47,10 @@ this.body_name = None
 this.coordinates = None
 this.lat_dest = None
 this.lon_dest = None
+this.x_dest = None
+this.y_dest = None
+this.z_dest = None
+this.planet_dest = None
 this.radius = None
 
 this.nearloc = {
@@ -74,7 +78,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "0.9.1.7"
+this.version = "0.9.2"
 this.update = True
 this.new_version = False
 this.update_version = None
@@ -286,13 +290,17 @@ def plugin_app(parent):
    
    #this.status1 = tk.Label(this.frame, anchor=tk.W, text="")
    this.status = HyperlinkLabel(this.frame, anchor=tk.W, text="", popup_copy = True)
+   this.infobody_status = HyperlinkLabel(this.frame, anchor=tk.W, text="", popup_copy = True)
    this.bearing_status = tk.Label(this.frame, anchor=tk.W, text="")
-   this.bearing = False
 
    this.label.grid(row = 0, column = 0, sticky=tk.W)
    this.status.grid(row = 0, column = 1, sticky=tk.W)
-   this.bearing_status.grid(row = 1, column = 0, columnspan=2, sticky=tk.W)
+   this.infobody_status.grid(row = 1, column = 0, columnspan=2, sticky=tk.W)
+   this.bearing_status.grid(row = 2, column = 0, columnspan=2, sticky=tk.W)
 
+   this.infobody = False
+   this.infobody_status.grid_remove()
+   
    this.bearing = False
    this.bearing_status.grid_remove()
    
@@ -365,7 +373,51 @@ def updateBearing(latitude, longitude, bearing = None, distance = None):
    if(this.debug.get()=="1"):
       print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "updateBearing = {} / {}".format(bearing, distance)
 
+def updateSysBearing(x, y, z, planet):
+   #this.status["text"] = ""
+   #this.status.grid_remove()
+   #this.status = tk.Label(this.frame, anchor=tk.W)
+
+   if(this.coordinates is not None):
+      distance = round(math.sqrt((this.coordinates[0]-x)**2+(this.coordinates[1]-y)**2+(this.coordinates[2]-z)**2),2)
+      
+      if not this.bearing:
+         this.bearing = True
+         this.bearing_status.grid()
+
+      if(distance==0):
+         this.bearing_status["text"] = "   DEST System({},{},{}) : Planet {}".format(round(x,1), round(y,1), round(z,1), planet)
+      else:
+         this.bearing_status["text"] = "   DEST System({},{},{}) : DIST {} ly".format(round(x,1), round(y,1), round(z,1), round(distance,2))
+
+      display(this.bearing_status["text"], 250,730, "yellow", "normal")    
+      
+      if(this.debug.get()=="1"):
+         print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "updateSysBearing = {},{},{} / {}".format(x,y,z, distance)
+   else:
+      if this.bearing:
+         this.bearing = False
+         this.bearing_status.grid_remove()
+
+def updateInfoBody(txt, url):
+   #this.status["text"] = ""
+   #this.status.grid_remove()
+   #this.status = tk.Label(this.frame, anchor=tk.W)
+   if not this.infobody:
+      this.infobody = True
+      this.infobody_status.grid()
+
+   this.infobody_status["text"] = "   " + txt
+   this.infobody_status["url"] = url
+   
+   if(this.debug.get()=="1"):
+      print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "updateInfoBody = {} / {}".format(txt, url)
+
 def dashboard_entry(cmdr, is_beta, entry):
+   if this.infobody is None:
+      this.infobody = False
+      this.infobody_status.grid_remove()
+      
    if this.update:
       timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
       this.landed = entry['Flags'] & 1<<1 and True or False
@@ -414,9 +466,12 @@ def dashboard_entry(cmdr, is_beta, entry):
             brng = calc_bearing(this.nearloc['Latitude'], this.nearloc['Longitude'], float(this.lat_dest), float(this.lon_dest), this.radius)
             updateBearing(this.lat_dest, this.lon_dest, round(brng,2), round(dist,3))
          else:
-            if this.bearing:
-               this.bearing = False
-               this.bearing_status.grid_remove()
+            if (this.x_dest is None) or (this.y_dest is None) or (this.z_dest is None) or (this.planet_dest is None):
+               if this.bearing:
+                  this.bearing = False
+                  this.bearing_status.grid_remove()
+            else:
+               updateSysBearing(this.x_dest, this.y_dest, this.z_dest, this.planet_dest)
          
       else:
          this.body_name = None
@@ -424,9 +479,15 @@ def dashboard_entry(cmdr, is_beta, entry):
          transponder(False)
          this.lat_dest = None
          this.lon_dest = None
-         if this.bearing:
-            this.bearing = False
-            this.bearing_status.grid_remove()
+         if (this.x_dest is None) or (this.y_dest is None) or (this.z_dest is None) or (this.planet_dest is None):
+            if this.bearing:
+               this.bearing = False
+               this.bearing_status.grid_remove()
+         else:
+            updateSysBearing(this.x_dest, this.y_dest, this.z_dest, this.planet_dest)
+         if this.infobody:
+            this.infobody = False
+            this.infobody_status.grid_remove()
       #print "landed = {}".format(this.landed)
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
@@ -441,10 +502,10 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          if ('StarSystem' in entry):
             this.system_name = entry['StarSystem']
             #print "SystemAddress = {}".format(entry['SystemAddress'])
-         if ('Body' in entry):
-            this.body_name = entry['Body']
             #print "BodyID = {}".format(entry['BodyID'])
          if ('Latitude' in entry) and ('Longitude' in entry):
+            if ('Body' in entry):
+               this.body_name = entry['Body']
             this.landed = True
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_data(cmdr, entry['Latitude'], entry['Longitude'], None, None, entry['event'], timestamp)
@@ -452,6 +513,8 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             this.coordinates = entry['StarPos']
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_coordinates(cmdr, this.coordinates, timestamp)
+            if (this.x_dest is not None) and (this.y_dest is not None) and (this.z_dest is not None) and (this.planet_dest is not None):
+               updateSysBearing(this.x_dest, this.y_dest, this.z_dest, this.planet_dest)
          updateInfo("v"+this.version+" - Ready", False)
 
       if entry['event'] == 'StartUp':
@@ -471,9 +534,16 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          transponder(False)
          this.lat_dest = None
          this.lon_dest = None
+         this.x_dest = None
+         this.y_dest = None
+         this.z_dest = None
+         this.planet_dest = None
          if this.bearing:
             this.bearing = False
             this.bearing_status.grid_remove()
+         if this.infobody:
+            this.infobody = False
+            this.infobody_status.grid_remove()
          this.droped = []
          updateInfo("v"+this.version+" - Ready", False)
 
@@ -524,8 +594,9 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             #   transponder(True, cmdr)
                
          if entry['Message'][:len(this.setdestToggle)].lower() == this.setdestToggle.lower():
+            unset_dest = False
             try:
-               print "body = {}".format(this.body_name)
+               #print "body = {}".format(this.body_name)
                if(this.nearloc['Latitude'] is not None and this.nearloc['Longitude'] is not None and this.body_name is not None):
                   coord_dest = entry['Message'][len(this.setdestToggle)+1:].strip("()").split(",")
                   this.lat_dest = coord_dest[0]
@@ -542,16 +613,24 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
                   updateBearing(this.lat_dest, this.lon_dest, round(brng,2), round(dist,3))
                else:
                   plug.show_error(_('Error: #ExTool DEST need to have lat lon'))
+                  unset_dest = True
                   if(this.debug.get()=="1"):
                      print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "Error: #ExTool DEST need to have lat lon"
             except:
-               updateInfo("Unset destination")
-               this.lat_dest = None
-               this.lon_dest = None
-               send_destination(cmdr, 0, 0, 0)
-               if this.bearing:
-                  this.bearing = False
-                  this.bearing_status.grid_remove()
+               unset_dest = True
+            finally:
+               if(unset_dest):
+                  updateInfo("Unset destination")
+                  this.lat_dest = None
+                  this.lon_dest = None
+                  this.x_dest = None
+                  this.y_dest = None
+                  this.z_dest = None
+                  this.planet_dest = None
+                  send_destination(cmdr, 0, 0, 0)
+                  if this.bearing:
+                     this.bearing = False
+                     this.bearing_status.grid_remove()
 
          if entry['Message'][:len(this.savepointToggle)].lower() == this.savepointToggle.lower():
             if(this.nearloc['Latitude'] is not None and this.nearloc['Longitude'] is not None):
@@ -631,6 +710,9 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             transponder(False)
             this.system_name = entry['StarSystem']
             this.body_name = None
+            if this.infobody:
+               this.infobody = False
+               this.infobody_status.grid_remove()
       
       if entry['event'] == 'FSDJump':
          this.SCmode = True
@@ -639,6 +721,8 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             this.coordinates = entry['StarPos']
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_coordinates(cmdr, this.coordinates, timestamp)
+            if (this.x_dest is not None) and (this.y_dest is not None) and (this.z_dest is not None) and (this.planet_dest is not None):
+               updateSysBearing(this.x_dest, this.y_dest, this.z_dest, this.planet_dest)
       
       if entry['event'] == 'SupercruiseEntry':
          this.SCmode = True
@@ -647,8 +731,8 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
       if entry['event'] == 'SupercruiseExit':
          this.SCmode = False
          this.system_name = entry['StarSystem']
-         if ('Body' in entry):
-            this.body_name = entry['Body']
+         #if ('Body' in entry):
+         #   this.body_name = entry['Body']
       
       if entry['event'] == 'LaunchSRV':
          this.SRVmode = True
@@ -975,15 +1059,32 @@ def worker():
                      print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "Code = {}".format(code)
                      #print datetime.datetime.now().strftime("%H:%M:%S") + " - " + data.encode('ascii', 'ignore')
                else:
-                  if(code==100):
-                     if ('Latitude_Dest' in reply and 'Longitude_Dest' in reply):
-                        this.lat_dest = reply['Latitude_Dest']
-                        this.lon_dest = reply['Longitude_Dest']
-                     else:
-                        this.lat_dest = None
-                        this.lon_dest = None
-                     if('Radius' in reply):
-                        this.radius = reply['Radius']
+                  #print(reply)
+                  if ('X_Dest' in reply and 'Y_Dest' in reply and 'Z_Dest' in reply):
+                     this.x_dest = reply['X_Dest']
+                     this.y_dest = reply['Y_Dest']
+                     this.z_dest = reply['Z_Dest']
+                     this.planet_dest = reply['Planet_Dest']
+                  else:
+                     this.x_dest = None
+                     this.y_dest = None
+                     this.z_dest = None
+                     this.planet_dest = None
+                     
+                  if ('Latitude_Dest' in reply and 'Longitude_Dest' in reply):
+                     this.lat_dest = reply['Latitude_Dest']
+                     this.lon_dest = reply['Longitude_Dest']
+                  else:
+                     this.lat_dest = None
+                     this.lon_dest = None
+
+                  if('Radius' in reply):
+                     this.radius = reply['Radius']
+                     
+                  if('InfoBody' in reply and 'InfoBodyURL' in reply):
+                     updateInfoBody( reply['InfoBody'], reply['InfoBodyURL'] )
+                  else:
+                     this.infobody = None
                      #print "lala = {} {} {}".format(this.lat_dest,this.lon_dest,this.radius)
                if callback:
                   callback(reply)
