@@ -78,7 +78,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "0.9.2"
+this.version = "0.9.2.1"
 this.update = True
 this.new_version = False
 this.update_version = None
@@ -431,16 +431,19 @@ def dashboard_entry(cmdr, is_beta, entry):
             update_nearloc(entry['Latitude'], entry['Longitude'], round(entry['Altitude'] / 1000.,3), entry['Heading'], timestamp)
          else:
             update_nearloc(entry['Latitude'], entry['Longitude'], 0, entry['Heading'], timestamp)
-         
-         if this.autotrspdr.get()=="1":
-            if not this.trspdr_online:
-               transponder(True, cmdr)
-               #print "Survey = {}".format(this.survey_online)
-         else:
-            if this.survey_online:
+
+         if(this.nearloc['Altitude']<=500):
+            if this.autotrspdr.get()=="1":
                if not this.trspdr_online:
                   transponder(True, cmdr)
-         
+                  #print "Survey = {}".format(this.survey_online)
+            else:
+               if this.survey_online:
+                  if not this.trspdr_online:
+                     transponder(True, cmdr)
+         else:
+            transponder(False)
+            
          if this.trspdr_online:
             if(this.debug.get()=="1"):
                print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "TRSPDR count = {}".format(this.trspdr_count)
@@ -503,9 +506,9 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             this.system_name = entry['StarSystem']
             #print "SystemAddress = {}".format(entry['SystemAddress'])
             #print "BodyID = {}".format(entry['BodyID'])
+         if ('Body' in entry):
+            this.body_name = entry['Body']
          if ('Latitude' in entry) and ('Longitude' in entry):
-            if ('Body' in entry):
-               this.body_name = entry['Body']
             this.landed = True
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_data(cmdr, entry['Latitude'], entry['Longitude'], None, None, entry['event'], timestamp)
@@ -731,8 +734,8 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
       if entry['event'] == 'SupercruiseExit':
          this.SCmode = False
          this.system_name = entry['StarSystem']
-         #if ('Body' in entry):
-         #   this.body_name = entry['Body']
+         if ('Body' in entry):
+            this.body_name = entry['Body']
       
       if entry['event'] == 'LaunchSRV':
          this.SRVmode = True
@@ -743,9 +746,9 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          this.system_name = entry['StarSystem']
          this.body_name = entry['Body']
       if entry['event'] == 'LeaveBody':
-         transponder(False)
+         #transponder(False)
          this.system_name = entry['StarSystem']
-         this.body_name = None
+         #this.body_name = None
 
       if entry['event'] == 'ApproachSettlement':
          if(this.body_name is not None):
