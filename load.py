@@ -44,6 +44,7 @@ this.droped = []
 
 this.system_name = None
 this.body_name = None
+this.body_drop = None
 this.coordinates = None
 this.lat_dest = None
 this.lon_dest = None
@@ -78,7 +79,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "0.9.3"
+this.version = "1.0.0"
 this.update = True
 this.new_version = False
 this.update_version = None
@@ -508,6 +509,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             #print "BodyID = {}".format(entry['BodyID'])
          if ('Body' in entry):
             this.body_name = entry['Body']
+            this.body_drop = entry['Body']
          if ('Latitude' in entry) and ('Longitude' in entry):
             this.landed = True
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
@@ -527,12 +529,14 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             this.system_name = entry['StarSystem']
          if ('Body' in entry):
             this.body_name = entry['Body']
+            this.body_drop = entry['Body']
          this.droped = []
          updateInfo("v"+this.version+" - Ready", False)
 
       if entry['event'] == 'ShutDown':
          this.system_name = None
          this.body_name = None
+         this.body_drop = None
          update_nearloc(None, None, None, None, None)
          transponder(False)
          this.lat_dest = None
@@ -713,6 +717,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             transponder(False)
             this.system_name = entry['StarSystem']
             this.body_name = None
+            this.body_drop = None
             if this.infobody:
                this.infobody = False
                this.infobody_status.grid_remove()
@@ -736,6 +741,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          this.system_name = entry['StarSystem']
          if ('Body' in entry):
             this.body_name = entry['Body']
+            this.body_drop = entry['Body']
       
       if entry['event'] == 'LaunchSRV':
          this.SRVmode = True
@@ -787,6 +793,9 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot SCAN", this.nearloc['Time'])
             send_datascan(cmdr, entry['Type'], timestamp)
+         else:
+            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+            send_spacedatascan(cmdr, entry['Type'], timestamp)
 
 def update_nearloc(latitude, longitude, altitude, heading, timestamp):
    this.nearloc['Latitude'] = latitude
@@ -957,6 +966,16 @@ def send_datascan(cmdr, typescan, timestamp):
       'time' : '%d' % round(timestamp-this.nearloc['Time'])
    }
    call(cmdr, 'datascan', payload)
+
+def send_spacedatascan(cmdr, typescan, timestamp):
+   url = this.url_website+"send_data"
+   payload = {
+      'system' : this.system_name,
+      'bodydrop' : this.body_drop,
+      'typescan' : typescan,
+      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
+   }
+   call(cmdr, 'spacedatascan', payload)
 
 def send_destination(cmdr, setdest, latitude, longitude):
    url = this.url_website+"send_data"
