@@ -79,7 +79,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "1.0.0"
+this.version = "1.0.1"
 this.update = True
 this.new_version = False
 this.update_version = None
@@ -93,6 +93,7 @@ this.ndelsc = 0
 this.setdestToggle = "#ExTool DEST"
 this.savepointToggle = "#ExTool SAVE"
 this.delpointToggle = "#ExTool DEL"
+this.chksysToggle = "#ExTool CHKSYS"
 
 this.label = tk.Label()
 this.trspdr_online = False
@@ -662,6 +663,11 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          #   timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
          #   send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot SAVE", this.nearloc['Time'])
          #   send_savepoint(cmdr, "Volcanism", timestamp)
+
+         if entry['Message'][:len(this.chksysToggle)].lower() == this.chksysToggle.lower():
+            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+            comment = entry['Message'][len(this.chksysToggle)+len((entry['Message'][len(this.chksysToggle)+1:].split(" "))[0])+2:]
+            send_chksys(cmdr, (entry['Message'][len(this.chksysToggle)+1:].split(" "))[0], comment, timestamp)
             
       if entry['event'] == 'Screenshot':
          if ('Latitude' in entry) and ('Longitude' in entry):
@@ -976,6 +982,16 @@ def send_spacedatascan(cmdr, typescan, timestamp):
       'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
    }
    call(cmdr, 'spacedatascan', payload)
+
+def send_chksys(cmdr, chksys, comment, timestamp):
+   url = this.url_website+"send_data"
+   payload = {
+      'system' : this.system_name,
+      'chksys' : chksys,
+      'comment' : comment,
+      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
+   }
+   call(cmdr, 'chksys', payload)
 
 def send_destination(cmdr, setdest, latitude, longitude):
    url = this.url_website+"send_data"
