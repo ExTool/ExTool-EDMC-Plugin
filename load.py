@@ -5,6 +5,7 @@ import datetime
 import time
 import requests
 import os
+from os.path import isfile
 import key
 import math
 from winsound import *
@@ -94,6 +95,7 @@ this.setdestToggle = "#ExTool DEST"
 this.savepointToggle = "#ExTool SAVE"
 this.delpointToggle = "#ExTool DEL"
 this.chksysToggle = "#ExTool CHKSYS"
+this.commentToggle = "#ExTool COMMENT"
 
 this.label = tk.Label()
 this.trspdr_online = False
@@ -668,6 +670,11 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             comment = entry['Message'][len(this.chksysToggle)+len((entry['Message'][len(this.chksysToggle)+1:].split(" "))[0])+2:]
             send_chksys(cmdr, (entry['Message'][len(this.chksysToggle)+1:].split(" "))[0], comment, timestamp)
+
+         if entry['Message'][:len(this.commentToggle)].lower() == this.commentToggle.lower():
+            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+            comment = entry['Message'][len(this.commentToggle)+1:]
+            send_comment(cmdr, comment, timestamp)
             
       if entry['event'] == 'Screenshot':
          if ('Latitude' in entry) and ('Longitude' in entry):
@@ -742,6 +749,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          this.SCmode = True
          this.StartJump = False
          this.system_name = entry['StarSystem']
+         this.body_drop = None
       if entry['event'] == 'SupercruiseExit':
          this.SCmode = False
          this.system_name = entry['StarSystem']
@@ -887,23 +895,23 @@ def send_data(cmdr, latitude, longitude, altitude, heading, event, timestamp):
    #else:
    call(cmdr, 'coords', payload)
 
+   if(isfile(os.path.dirname(this.__file__)+'\\'+'snd_good.wav')):
+      soundfile = os.path.dirname(this.__file__)+'\\'+'snd_good.wav'
+   else:
+      soundfile = 'snd_good.wav'
    
    if(event=='Screenshot' or event=='Screenshot SC' or event=='Screenshot NA' or event=='Screenshot L'):
       if(trspdr_status=="1") :
          if(this.survey_online):
             if(this.trspdrsound.get()=="1" or this.surveysound.get()=="1") :
-               soundfile = 'snd_good.wav'
                this.queue.put(('playsound', soundfile, None))
          else:
             if(this.trspdrsound.get()=="1"):
-               soundfile = 'snd_good.wav'
                this.queue.put(('playsound', soundfile, None))
       else:
-         soundfile = 'snd_good.wav'
          this.queue.put(('playsound', soundfile, None))
    elif(event=='Screenshot MAT' or event=='Screenshot SCAN'):
       if(this.matsound.get()=="1"):
-         soundfile = 'snd_good.wav'
          this.queue.put(('playsound', soundfile, None))
 
 def send_material(cmdr, category, name, count, timestamp):
@@ -992,6 +1000,16 @@ def send_chksys(cmdr, chksys, comment, timestamp):
       'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
    }
    call(cmdr, 'chksys', payload)
+
+def send_comment(cmdr, comment, timestamp):
+   url = this.url_website+"send_data"
+   payload = {
+      'system' : this.system_name,
+      'bodydrop' : this.body_drop,
+      'comment' : comment,
+      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
+   }
+   call(cmdr, 'comment', payload)
 
 def send_destination(cmdr, setdest, latitude, longitude):
    url = this.url_website+"send_data"
@@ -1248,6 +1266,10 @@ def transponder(status, cmdr = None):
          if this.trspdrsound.get()=="1":
             soundfile = os.path.dirname(this.__file__)+'\\'+'trspdr_on.wav'
             this.queue.put(('playsound', soundfile, None))
+         #this.survey_online = True
+         #if this.surveysound.get()=="1":
+         #   soundfile = os.path.dirname(this.__file__)+'\\'+'survey_on.wav'
+         #   this.queue.put(('playsound', soundfile, None))
          #transponderStart(cmdr)
    else:
       if this.trspdr_online:
