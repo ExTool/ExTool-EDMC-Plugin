@@ -80,8 +80,9 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "1.0.1"
+this.version = "1.0.2"
 this.update = True
+this.disable = False
 this.new_version = False
 this.update_version = None
 #this.relog = False
@@ -164,8 +165,6 @@ def plugin_start():
    this.thread = Thread(target = worker, name = 'ExTool worker')
    this.thread.daemon = True
    this.thread.start()
-   
-   check_version()
    
    print("ExTool v"+this.version+" loaded!")
    
@@ -307,19 +306,24 @@ def plugin_app(parent):
    
    this.bearing = False
    this.bearing_status.grid_remove()
+
+   check_version()
    
-   if this.update:
-      if this.new_version:
-         updateInfoURL("New version v"+this.update_version+" available", "https://github.com/ExTool/ExTool-EDMC-Plugin/releases/latest", False)
-      else:
-         updateInfo("v"+this.version+" - Ready", False)
-      #this.status2.grid_remove()
-      #this.status1 = tk.Label(this.frame, anchor=tk.W, text="v"+this.version+" - Need to relog into Elite Dangerous")
+   if this.disable:
+      updateInfo("ExTool temporary disabled", False)
    else:
-      updateInfoURL("Need an update to v"+this.update_version, "https://github.com/ExTool/ExTool-EDMC-Plugin/releases/latest", False)
-      #this.status1.grid_remove()
-      #this.status2 = HyperlinkLabel(this.frame, url = this.url_website+"EDMC/latest_ExTool.zip", popup_copy = True)
-      #this.status2["text"] = "Need an update to v"+this.update_version
+      if this.update:
+         if this.new_version:
+            updateInfoURL("New version v"+this.update_version+" available", "https://github.com/ExTool/ExTool-EDMC-Plugin/releases/latest", False)
+         else:
+            updateInfo("v"+this.version+" - Ready", False)
+         #this.status2.grid_remove()
+         #this.status1 = tk.Label(this.frame, anchor=tk.W, text="v"+this.version+" - Need to relog into Elite Dangerous")
+      else:
+         updateInfoURL("Need an update to v"+this.update_version, "https://github.com/ExTool/ExTool-EDMC-Plugin/releases/latest", False)
+         #this.status1.grid_remove()
+         #this.status2 = HyperlinkLabel(this.frame, url = this.url_website+"EDMC/latest_ExTool.zip", popup_copy = True)
+         #this.status2["text"] = "Need an update to v"+this.update_version
    
    return this.frame
 
@@ -422,7 +426,7 @@ def dashboard_entry(cmdr, is_beta, entry):
       this.infobody = False
       this.infobody_status.grid_remove()
       
-   if this.update:
+   if this.update and not this.disable:
       timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
       this.landed = entry['Flags'] & 1<<1 and True or False
       this.SCmode = entry['Flags'] & 1<<4 and True or False
@@ -503,7 +507,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
       time.sleep(0.01)
       return
    
-   if this.update:
+   if this.update and not this.disable:
       if entry['event'] == 'Location':
          transponder(False)
          if ('StarSystem' in entry):
@@ -1242,15 +1246,24 @@ def check_version():
       url = this.url_website+"EDMC/version"
    else:
       url = this.url_website+"EDMC/version_beta"
-   rsend = this.session.get(url, verify=False)
-   if rsend.content[:5] != this.version[:5]:
-      this.update_version = rsend.content
-      this.update = False
-      this.new_version = True
-   else:
-      if rsend.content != this.version:
+   rsend = this.session.get(url, verify=False, timeout=_TIMEOUT)
+   print(url)
+   
+   if rsend.status_code == requests.codes.ok:
+      if rsend.content[:5] != this.version[:5]:
          this.update_version = rsend.content
+         this.update = False
          this.new_version = True
+      else:
+         if rsend.content != this.version:
+            this.update_version = rsend.content
+            this.new_version = True
+   else:
+      this.disable = True
+
+   if this.disable:
+      print('ExTool : retry in 60sec')
+      this.frame.after(60000,check_version)
 
 def transponder(status, cmdr = None):
    if (cmdr is None) or (this.body_name is None) or (this.system_name is None) or (this.nearloc['Latitude'] is None) or (this.nearloc['Longitude'] is None):
