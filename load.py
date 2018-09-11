@@ -8,6 +8,7 @@ import os
 from os.path import isfile
 import key
 import math
+import urllib2
 from winsound import *
 #from PriorityQueue import Queue
 import Queue as Q
@@ -891,7 +892,7 @@ def send_data(cmdr, latitude, longitude, altitude, heading, event, timestamp):
    else:
       new_text = event + " - {}".format(this.body_name)
 
-   new_url = this.url_website+"index.php?mode=3d&planet={}&goto={},{}".format(this.body_name, latitude, longitude)
+   new_url = this.url_website + 'index.php?mode=3d&planet=%s&goto=%f,%f' % (urllib2.quote(this.body_name), latitude, longitude)
    updateInfoURL(new_text, new_url)
 
    #if(trspdr_status=="1") :
