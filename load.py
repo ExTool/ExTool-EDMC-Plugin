@@ -55,6 +55,7 @@ this.y_dest = None
 this.z_dest = None
 this.planet_dest = None
 this.radius = None
+this.landingpad = None
 
 this.nearloc = {
    'Latitude' : None,
@@ -81,7 +82,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "1.0.2"
+this.version = "1.1.0"
 this.update = True
 this.disable = False
 this.new_version = False
@@ -511,6 +512,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
    if this.update and not this.disable:
       if entry['event'] == 'Location':
          transponder(False)
+         this.landingpad = None
          if ('StarSystem' in entry):
             this.system_name = entry['StarSystem']
             #print "SystemAddress = {}".format(entry['SystemAddress'])
@@ -553,6 +555,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          this.y_dest = None
          this.z_dest = None
          this.planet_dest = None
+         this.landingpad = None
          if this.bearing:
             this.bearing = False
             this.bearing_status.grid_remove()
@@ -714,13 +717,20 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
                timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
                send_data(cmdr, entry['Latitude'], entry['Longitude'], None, None, entry['event'], timestamp)
 
+      if entry['event'] == 'DockingGranted':
+         this.landingpad = entry['LandingPad']
+
       if entry['event'] == 'Docked':
          if entry['StationType'] == 'SurfaceStation':
             this.landed = True
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], None, None, 'Touchdown', timestamp)
             send_surfacestation(cmdr, entry['StationName'], entry['MarketID'], timestamp)
+         else:
+            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+            send_spacestation(cmdr, entry['StationName'], entry['MarketID'], timestamp)
       if entry['event'] == 'Undocked':
+         this.landingpad = None
          if entry['StationType'] == 'SurfaceStation':
             this.landed = False
             this.droped = []
@@ -736,6 +746,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             this.system_name = entry['StarSystem']
             this.body_name = None
             this.body_drop = None
+            this.droped = []
             if this.infobody:
                this.infobody = False
                this.infobody_status.grid_remove()
@@ -755,6 +766,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          this.StartJump = False
          this.system_name = entry['StarSystem']
          this.body_drop = None
+         this.droped = []
       if entry['event'] == 'SupercruiseExit':
          this.SCmode = False
          this.system_name = entry['StarSystem']
@@ -781,32 +793,43 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             send_settlement(cmdr, entry['Name'], entry['MarketID'], this.StartJump, timestamp)
          
       if entry['event'] == 'CollectCargo':
-         if this.landed:
-            if entry['Type'] in this.droped:
-               this.droped.remove(entry['Type'])
-            else:
+         if entry['Type'] in this.droped:
+            this.droped.remove(entry['Type'])
+         else:
+            if this.landed:
                timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
                send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot MAT", this.nearloc['Time'])
                send_material(cmdr, "Cargo", entry['Type'], 1, timestamp)
+            else:
+               timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+               send_spacematerial(cmdr, "Cargo", entry['Type'], 1, timestamp)
       if entry['event'] == 'EjectCargo':
-         if this.landed:
-            for x in range(0, entry['Count']):
-               this.droped.append(entry['Type'])
+         for x in range(0, entry['Count']):
+            this.droped.append(entry['Type'])
       if entry['event'] == 'MaterialCollected':
          if this.landed:
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot MAT", this.nearloc['Time'])
             send_material(cmdr, entry['Category'], entry['Name'], entry['Count'], timestamp)
+         else:
+            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+            send_spacematerial(cmdr, entry['Category'], entry['Name'], entry['Count'], timestamp)
       if entry['event'] == 'DatalinkScan':
          if this.landed:
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot SCAN", this.nearloc['Time'])
             send_datalink(cmdr, entry['Message'], timestamp)
+         else:
+            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+            send_spacedatalink(cmdr, entry['Message'], timestamp)
       if entry['event'] == 'DatalinkVoucher':
          if this.landed:
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot SCAN", this.nearloc['Time'])
             send_datavoucher(cmdr, entry['Reward'], entry['VictimFaction'], entry['PayeeFaction'], timestamp)
+         else:
+            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+            send_spacedatavoucher(cmdr, entry['Reward'], entry['VictimFaction'], entry['PayeeFaction'], timestamp)
       if entry['event'] == 'DataScanned':
          if this.landed:
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
@@ -939,6 +962,18 @@ def send_material(cmdr, category, name, count, timestamp):
    }
    call(cmdr, 'materials', payload)
 
+def send_spacematerial(cmdr, category, name, count, timestamp):
+   url = this.url_website+"send_data"
+   payload = {
+      'system' : this.system_name,
+      'bodydrop' : this.body_drop,
+      'category' : category,
+      'name' : name,
+      'count' : '%d' % count,
+      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
+   }
+   call(cmdr, 'spacematerial', payload)
+
 def send_datalink(cmdr, message, timestamp):
    url = this.url_website+"send_data"
    payload = {
@@ -953,6 +988,16 @@ def send_datalink(cmdr, message, timestamp):
       'time' : '%d' % round(timestamp-this.nearloc['Time'])
    }
    call(cmdr, 'datalink', payload)
+
+def send_spacedatalink(cmdr, message, timestamp):
+   url = this.url_website+"send_data"
+   payload = {
+      'system' : this.system_name,
+      'bodydrop' : this.body_drop,
+      'message' : message,
+      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
+   }
+   call(cmdr, 'spacedatalink', payload)
 
 def send_datavoucher(cmdr, reward, victim, payee, timestamp):
    url = this.url_website+"send_data"
@@ -970,6 +1015,17 @@ def send_datavoucher(cmdr, reward, victim, payee, timestamp):
       'time' : '%d' % round(timestamp-this.nearloc['Time'])
    }
    call(cmdr, 'datavoucher', payload)
+
+def send_spacedatavoucher(cmdr, reward, victim, payee, timestamp):
+   url = this.url_website+"send_data"
+   payload = {
+      'system' : this.system_name,
+      'bodydrop' : this.body_drop,
+      'reward' : '%d' % reward,
+      'victim' : victim,
+      'payee' : payee,
+      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))   }
+   call(cmdr, 'spacedatavoucher', payload)
 
 def send_datascan(cmdr, typescan, timestamp):
    url = this.url_website+"send_data"
@@ -1053,6 +1109,10 @@ def send_delpoint(cmdr, name_point):
 
 def send_surfacestation(cmdr, name_settlement, marketID, timestamp):
    url = this.url_website+"send_data"
+   if this.landingpad is None:
+      pad = ""
+   else:
+      pad = this.landingpad
    payload = {
       'system' : this.system_name,
       'body' : this.body_name,
@@ -1060,10 +1120,26 @@ def send_surfacestation(cmdr, name_settlement, marketID, timestamp):
       'longitude' : '{}'.format(this.nearloc['Longitude']),
       'name_settlement' : name_settlement,
       'marketID' : '{}'.format(marketID),
+      'landingpad' : '{}'.format(pad),
       'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp)),
       'time' : '%d' % round(timestamp-this.nearloc['Time'])
    }
    call(cmdr, 'surfacestation', payload)
+
+def send_spacestation(cmdr, name_settlement, marketID, timestamp):
+   url = this.url_website+"send_data"
+   if this.landingpad is None:
+      pad = ""
+   else:
+      pad = this.landingpad
+   payload = {
+      'system' : this.system_name,
+      'name_settlement' : name_settlement,
+      'marketID' : '{}'.format(marketID),
+      'landingpad' : '{}'.format(pad),
+      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
+   }
+   call(cmdr, 'spacestation', payload)
 
 def send_settlement(cmdr, name_settlement, marketID, startJump, timestamp):
    url = this.url_website+"send_data"
