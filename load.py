@@ -82,7 +82,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "1.1.1"
+this.version = "1.1.2"
 this.update = True
 this.disable = False
 this.new_version = False
@@ -723,9 +723,10 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
       if entry['event'] == 'Docked':
          if entry['StationType'] == 'SurfaceStation':
             this.landed = True
-            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-            send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], None, None, 'Touchdown', timestamp)
-            send_surfacestation(cmdr, entry['StationName'], entry['MarketID'], timestamp)
+            if this.nearloc['Latitude'] is not None and this.nearloc['Longitude'] is not None:
+               timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+               send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], None, None, 'Touchdown', timestamp)
+               send_surfacestation(cmdr, entry['StationName'], entry['MarketID'], timestamp)
          else:
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_spacestation(cmdr, entry['StationName'], entry['MarketID'], timestamp)
