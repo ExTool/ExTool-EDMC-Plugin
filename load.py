@@ -82,7 +82,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "1.1.2"
+this.version = "1.1.3"
 this.update = True
 this.disable = False
 this.new_version = False
@@ -1329,10 +1329,21 @@ def check_version():
    
    if rsend.status_code == requests.codes.ok:
       if rsend.content[:5] != this.version[:5]:
-         if this.version[0]<rsend.content[0] or (this.version[0]==rsend.content[0] and this.version[2]<rsend.content[2]) or (this.version[0]==rsend.content[0] and this.version[2]==rsend.content[2] and this.version[4]<rsend.content[4]):
+         
+         if this.version[-5:]!="_beta":
+            url = this.url_website+"EDMC/version_min"
+         else:
+            url = this.url_website+"EDMC/version_beta_min"
+         rsend_min = this.session.get(url, verify=False, timeout=_TIMEOUT)
+         
+         if this.version[0]<rsend_min.content[0] or (this.version[0]==rsend_min.content[0] and this.version[2]<rsend_min.content[2]) or (this.version[0]==rsend_min.content[0] and this.version[2]==rsend_min.content[2] and this.version[4]<rsend_min.content[4]):
             this.update_version = rsend.content
             this.update = False
             this.new_version = True
+         else:
+            if this.version[0]<rsend.content[0] or (this.version[0]==rsend.content[0] and this.version[2]<rsend.content[2]) or (this.version[0]==rsend.content[0] and this.version[2]==rsend.content[2] and this.version[4]<rsend.content[4]):
+               this.update_version = rsend.content
+               this.new_version = True
       else:
          if rsend.content != this.version:
             this.update_version = rsend.content
