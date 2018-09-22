@@ -82,7 +82,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "1.1.3"
+this.version = "1.1.4"
 this.update = True
 this.disable = False
 this.new_version = False
@@ -452,7 +452,7 @@ def dashboard_entry(cmdr, is_beta, entry):
                   if not this.trspdr_online:
                      transponder(True, cmdr)
          else:
-            transponder(False)
+            transponder(False, cmdr)
             
          if this.trspdr_online:
             if(this.debug.get()=="1"):
@@ -489,7 +489,7 @@ def dashboard_entry(cmdr, is_beta, entry):
       else:
          this.body_name = None
          update_nearloc(None, None, None, None, None)
-         transponder(False)
+         transponder(False, cmdr)
          this.lat_dest = None
          this.lon_dest = None
          if (this.x_dest is None) or (this.y_dest is None) or (this.z_dest is None) or (this.planet_dest is None):
@@ -511,7 +511,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
    
    if this.update and not this.disable:
       if entry['event'] == 'Location':
-         transponder(False)
+         transponder(False, cmdr)
          this.landingpad = None
          if ('StarSystem' in entry):
             this.system_name = entry['StarSystem']
@@ -534,7 +534,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
 
       if entry['event'] == 'StartUp':
          update_nearloc(None, None, None, None, None)
-         transponder(False)
+         transponder(False, cmdr)
          if ('StarSystem' in entry):
             this.system_name = entry['StarSystem']
          if ('Body' in entry):
@@ -548,7 +548,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          this.body_name = None
          this.body_drop = None
          update_nearloc(None, None, None, None, None)
-         transponder(False)
+         transponder(False, cmdr)
          this.lat_dest = None
          this.lon_dest = None
          this.x_dest = None
@@ -582,7 +582,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             if this.survey_online:
                this.survey_online = False
                if this.autotrspdr.get()=="0":
-                  transponder(False)
+                  transponder(False, cmdr)
                if this.surveysound.get()=="1":
                   soundfile = os.path.dirname(this.__file__)+'\\'+'survey_off.wav'
                   this.queue.put(('playsound', soundfile, None))
@@ -600,12 +600,12 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
                   if this.surveysound.get()=="1":
                      soundfile = os.path.dirname(this.__file__)+'\\'+'survey_off.wav'
                      this.queue.put(('playsound', soundfile, None))
-               transponder(False)
+               transponder(False, cmdr)
             else:
                this.autotrspdr = tk.StringVar(value="1")
                #transponder(True, cmdr)
             #if this.trspdr_online:
-            #   transponder(False)
+            #   transponder(False, cmdr)
             #else:
             #   if this.autosurvey.get()=="1":
             #      this.survey_online = True
@@ -743,7 +743,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          this.SCmode = True
          this.StartJump = True
          if entry['JumpType'] == 'Hyperspace':
-            transponder(False)
+            transponder(False, cmdr)
             this.system_name = entry['StarSystem']
             this.body_name = None
             this.body_drop = None
@@ -784,7 +784,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          this.system_name = entry['StarSystem']
          this.body_name = entry['Body']
       if entry['event'] == 'LeaveBody':
-         #transponder(False)
+         #transponder(False, cmdr)
          this.system_name = entry['StarSystem']
          #this.body_name = None
 
@@ -1171,6 +1171,14 @@ def send_coordinates(cmdr, coordinates, timestamp):
    }
    call(cmdr, 'coordinates', payload)
 
+def send_trspdrstatus(cmdr, trspdr_status):
+   url = this.url_website+"send_data"
+   payload = {
+      'system' : this.system_name,
+      'status' : trspdr_status
+   }
+   call(cmdr, 'trspdr', payload)
+
 # Worker thread
 def worker():
    url = this.url_website+"send_data"
@@ -1315,7 +1323,6 @@ def update_velocity(args):
                   if this.trspdrsound.get()=="1":
                      soundfile = os.path.dirname(this.__file__)+'\\'+'survey_off.wav'
                      this.queue.put(('playsound', soundfile, None))
-         #   transponder(False)
    else:
       this.trspdr_delay = 10000
 
@@ -1362,8 +1369,9 @@ def transponder(status, cmdr = None):
       print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "TRSPDR status = {}".format(status)
    if status:
       if not this.trspdr_online:
-         updateInfo("Transponder activated")
          this.trspdr_online = True
+         send_trspdrstatus(cmdr, True)
+         updateInfo("Transponder activated")
          this.trspdr_delay = 10000
          this.trspdr_count = 0
          if this.trspdrsound.get()=="1":
@@ -1377,6 +1385,7 @@ def transponder(status, cmdr = None):
    else:
       if this.trspdr_online:
          this.trspdr_online = False
+         send_trspdrstatus(cmdr, False)
          updateInfo("Transponder deactivated")
          if this.trspdrsound.get()=="1":
             soundfile = os.path.dirname(this.__file__)+'\\'+'trspdr_off.wav'
@@ -1389,7 +1398,7 @@ def transponder(status, cmdr = None):
 
 def transponderStart(cmdr):
    if (not this.trspdr_online) or (cmdr is None) or (this.body_name is None) or (this.system_name is None) or (this.nearloc['Latitude'] is None) or (this.nearloc['Longitude'] is None):
-      transponder(False)
+      transponder(False, cmdr)
       return
    if EliteInForeground():
       this.trspdr_count += 1
