@@ -82,7 +82,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "1.1.4"
+this.version = "1.2.0"
 this.update = True
 this.disable = False
 this.new_version = False
@@ -839,6 +839,14 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          else:
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_spacedatascan(cmdr, entry['Type'], timestamp)
+      if entry['event'] == 'CodexEntry':
+         if this.landed:
+            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+            send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot CODEX", this.nearloc['Time'])
+            send_codex(cmdr, entry['EntryID'], entry['Name'], entry['Category'], entry['SubCategory'], timestamp)
+         else:
+            timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+            send_spacecodex(cmdr, entry['EntryID'], entry['Name'], entry['Category'], entry['SubCategory'], timestamp)
 
 def update_nearloc(latitude, longitude, altitude, heading, timestamp):
    this.nearloc['Latitude'] = latitude
@@ -909,6 +917,8 @@ def send_data(cmdr, latitude, longitude, altitude, heading, event, timestamp):
       new_text = "Material - {}".format(this.body_name)
    elif(event=='Screenshot SCAN') :
       new_text = "Scan - {}".format(this.body_name)
+   elif(event=='Screenshot CODEX') :
+      new_text = "Codex - {}".format(this.body_name)
    elif(event=='Screenshot SAVE') :
       new_text = "Save - {}".format(this.body_name)
    elif(event=='Screenshot DEST') :
@@ -1052,6 +1062,37 @@ def send_spacedatascan(cmdr, typescan, timestamp):
       'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
    }
    call(cmdr, 'spacedatascan', payload)
+
+def send_codex(cmdr, entryID, name, category, subcategory, timestamp):
+   url = this.url_website+"send_data"
+   payload = {
+      'system' : this.system_name,
+      'body' : this.body_name,
+      'latitude' : '{}'.format(this.nearloc['Latitude']),
+      'longitude' : '{}'.format(this.nearloc['Longitude']),
+      'altitude' : '{}'.format(this.nearloc['Altitude']),
+      'heading' : '{}'.format(this.nearloc['Heading']),
+      'entryID' : entryID,
+      'name' : name,
+      'category' : category,
+      'subcategory' : subcategory,
+      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp)),
+      'time' : '%d' % round(timestamp-this.nearloc['Time'])
+   }
+   call(cmdr, 'codex', payload)
+
+def send_spacecodex(cmdr, entryID, name, category, subcategory, timestamp):
+   url = this.url_website+"send_data"
+   payload = {
+      'system' : this.system_name,
+      'bodydrop' : this.body_drop,
+      'entryID' : entryID,
+      'name' : name,
+      'category' : category,
+      'subcategory' : subcategory,
+      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
+   }
+   call(cmdr, 'spacecodex', payload)
 
 def send_chksys(cmdr, chksys, comment, timestamp):
    url = this.url_website+"send_data"
@@ -1205,7 +1246,6 @@ def worker():
                      print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "Code = {}".format(code)
                      #print datetime.datetime.now().strftime("%H:%M:%S") + " - " + data.encode('ascii', 'ignore')
                else:
-                  #print(reply)
                   if ('X_Dest' in reply and 'Y_Dest' in reply and 'Z_Dest' in reply):
                      this.x_dest = reply['X_Dest']
                      this.y_dest = reply['Y_Dest']
