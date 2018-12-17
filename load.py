@@ -42,6 +42,7 @@ this.StartJump = False
 this.SCmode = False
 this.SRVmode = False
 this.landed = False
+this.lowALT = False
 this.droped = []
 
 this.system_name = None
@@ -82,7 +83,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "1.2.1"
+this.version = "1.2.2"
 this.update = True
 this.disable = False
 this.new_version = False
@@ -816,7 +817,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_spacematerial(cmdr, entry['Category'], entry['Name'], entry['Count'], timestamp)
       if entry['event'] == 'DatalinkScan':
-         if(this.nearloc['Latitude'] is not None or this.nearloc['Longitude'] is not None or this.nearloc['Altitude'] is not None or this.nearloc['Heading'] is not None):
+         if this.lowALT:
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot SCAN", this.nearloc['Time'])
             send_datalink(cmdr, entry['Message'], timestamp)
@@ -824,7 +825,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_spacedatalink(cmdr, entry['Message'], timestamp)
       if entry['event'] == 'DatalinkVoucher':
-         if(this.nearloc['Latitude'] is not None or this.nearloc['Longitude'] is not None or this.nearloc['Altitude'] is not None or this.nearloc['Heading'] is not None):
+         if this.lowALT:
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot SCAN", this.nearloc['Time'])
             send_datavoucher(cmdr, entry['Reward'], entry['VictimFaction'], entry['PayeeFaction'], timestamp)
@@ -832,7 +833,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_spacedatavoucher(cmdr, entry['Reward'], entry['VictimFaction'], entry['PayeeFaction'], timestamp)
       if entry['event'] == 'DataScanned':
-         if(this.nearloc['Latitude'] is not None or this.nearloc['Longitude'] is not None or this.nearloc['Altitude'] is not None or this.nearloc['Heading'] is not None):
+         if this.lowALT:
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot SCAN", this.nearloc['Time'])
             send_datascan(cmdr, entry['Type'], timestamp)
@@ -840,7 +841,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_spacedatascan(cmdr, entry['Type'], timestamp)
       if entry['event'] == 'CodexEntry':
-         if(this.nearloc['Latitude'] is not None or this.nearloc['Longitude'] is not None or this.nearloc['Altitude'] is not None or this.nearloc['Heading'] is not None):
+         if this.lowALT:
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot CODEX", this.nearloc['Time'])
             send_codex(cmdr, entry['EntryID'], entry['Name'], entry['Category'], entry['SubCategory'], timestamp)
@@ -854,6 +855,13 @@ def update_nearloc(latitude, longitude, altitude, heading, timestamp):
    this.nearloc['Altitude'] = altitude
    this.nearloc['Heading'] = heading
    this.nearloc['Time'] = timestamp
+   if altitude is not None:
+      if altitude < 20.: #1.03 min
+         this.lowALT = True
+      else:
+         this.lowALT = False
+   else:
+      this.lowALT = False
    #if(this.debug.get()=="1"):
    #   print datetime.datetime.now().strftime("%H:%M:%S") + " - " + "update nearloc to ({},{}) A{} H{} at {}".format(this.nearloc['Latitude'],this.nearloc['Longitude'],this.nearloc['Altitude'],this.nearloc['Heading'],this.nearloc['Time'])
 
