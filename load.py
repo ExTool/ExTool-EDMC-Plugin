@@ -83,7 +83,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "1.2.2"
+this.version = "1.2.3"
 this.update = True
 this.disable = False
 this.new_version = False
@@ -722,23 +722,22 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          this.landingpad = entry['LandingPad']
 
       if entry['event'] == 'Docked':
-         if entry['StationType'] == 'SurfaceStation':
+         if this.lowALT:
             this.landed = True
             if this.nearloc['Latitude'] is not None and this.nearloc['Longitude'] is not None:
                timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
                send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], None, None, 'Touchdown', timestamp)
-               send_surfacestation(cmdr, entry['StationName'], entry['MarketID'], timestamp)
+               send_surfacestation(cmdr, entry['StationName'], entry['MarketID'], entry['StationType'], timestamp)
          else:
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-            send_spacestation(cmdr, entry['StationName'], entry['MarketID'], timestamp)
+            send_spacestation(cmdr, entry['StationName'], entry['MarketID'], entry['StationType'], timestamp)
       if entry['event'] == 'Undocked':
          this.landingpad = None
-         if entry['StationType'] == 'SurfaceStation':
+         if this.lowALT:
             this.landed = False
             this.droped = []
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], None, None, 'Liftoff', timestamp)
-            send_surfacestation(cmdr, entry['StationName'], entry['MarketID'], timestamp)
 
       if entry['event'] == 'StartJump':
          this.SCmode = True
@@ -856,7 +855,7 @@ def update_nearloc(latitude, longitude, altitude, heading, timestamp):
    this.nearloc['Heading'] = heading
    this.nearloc['Time'] = timestamp
    if altitude is not None:
-      if altitude < 20.: #1.03 min
+      if altitude < 2.: #1.03 min
          this.lowALT = True
       else:
          this.lowALT = False
@@ -1157,7 +1156,7 @@ def send_delpoint(cmdr, name_point):
    }
    call(cmdr, 'delpoint', payload)
 
-def send_surfacestation(cmdr, name_settlement, marketID, timestamp):
+def send_surfacestation(cmdr, name_settlement, marketID, stationtype, timestamp):
    url = this.url_website+"send_data"
    if this.landingpad is None:
       pad = ""
@@ -1171,12 +1170,13 @@ def send_surfacestation(cmdr, name_settlement, marketID, timestamp):
       'name_settlement' : name_settlement,
       'marketID' : '{}'.format(marketID),
       'landingpad' : '{}'.format(pad),
+      'stationtype' : stationtype,
       'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp)),
       'time' : '%d' % round(timestamp-this.nearloc['Time'])
    }
    call(cmdr, 'surfacestation', payload)
 
-def send_spacestation(cmdr, name_settlement, marketID, timestamp):
+def send_spacestation(cmdr, name_settlement, marketID, stationtype, timestamp):
    url = this.url_website+"send_data"
    if this.landingpad is None:
       pad = ""
@@ -1187,6 +1187,7 @@ def send_spacestation(cmdr, name_settlement, marketID, timestamp):
       'name_settlement' : name_settlement,
       'marketID' : '{}'.format(marketID),
       'landingpad' : '{}'.format(pad),
+      'stationtype' : stationtype,
       'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
    }
    call(cmdr, 'spacestation', payload)
