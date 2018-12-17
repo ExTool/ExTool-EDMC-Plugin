@@ -82,7 +82,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "1.2.0"
+this.version = "1.2.1"
 this.update = True
 this.disable = False
 this.new_version = False
@@ -816,7 +816,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_spacematerial(cmdr, entry['Category'], entry['Name'], entry['Count'], timestamp)
       if entry['event'] == 'DatalinkScan':
-         if this.landed:
+         if(this.nearloc['Latitude'] is not None or this.nearloc['Longitude'] is not None or this.nearloc['Altitude'] is not None or this.nearloc['Heading'] is not None):
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot SCAN", this.nearloc['Time'])
             send_datalink(cmdr, entry['Message'], timestamp)
@@ -824,7 +824,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_spacedatalink(cmdr, entry['Message'], timestamp)
       if entry['event'] == 'DatalinkVoucher':
-         if this.landed:
+         if(this.nearloc['Latitude'] is not None or this.nearloc['Longitude'] is not None or this.nearloc['Altitude'] is not None or this.nearloc['Heading'] is not None):
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot SCAN", this.nearloc['Time'])
             send_datavoucher(cmdr, entry['Reward'], entry['VictimFaction'], entry['PayeeFaction'], timestamp)
@@ -832,7 +832,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_spacedatavoucher(cmdr, entry['Reward'], entry['VictimFaction'], entry['PayeeFaction'], timestamp)
       if entry['event'] == 'DataScanned':
-         if this.landed:
+         if(this.nearloc['Latitude'] is not None or this.nearloc['Longitude'] is not None or this.nearloc['Altitude'] is not None or this.nearloc['Heading'] is not None):
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot SCAN", this.nearloc['Time'])
             send_datascan(cmdr, entry['Type'], timestamp)
@@ -840,7 +840,7 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_spacedatascan(cmdr, entry['Type'], timestamp)
       if entry['event'] == 'CodexEntry':
-         if this.landed:
+         if(this.nearloc['Latitude'] is not None or this.nearloc['Longitude'] is not None or this.nearloc['Altitude'] is not None or this.nearloc['Heading'] is not None):
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot CODEX", this.nearloc['Time'])
             send_codex(cmdr, entry['EntryID'], entry['Name'], entry['Category'], entry['SubCategory'], timestamp)
