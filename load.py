@@ -83,7 +83,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "1.2.5"
+this.version = "1.2.6"
 this.update = True
 this.disable = False
 this.new_version = False
@@ -788,6 +788,30 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          this.system_name = entry['StarSystem']
          #this.body_name = None
 
+      if entry['event'] == 'FSSSignalDiscovered':
+         timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
+         if 'USSType' in entry:
+            usstype = entry['USSType']
+         else:
+            usstype = None
+         if 'SpawningState' in entry:
+            spawnstate = entry['SpawningState']
+         else:
+            spawnstate = None
+         if 'SpawningFaction' in entry:
+            spawnfaction = entry['SpawningFaction']
+         else:
+            spawnfaction = None
+         if 'ThreatLevel' in entry:
+            threat = entry['ThreatLevel']
+         else:
+            threat = None
+         if 'TimeRemaining' in entry:
+            time_remain = entry['TimeRemaining']
+         else:
+            time_remain = None
+         send_fss(cmdr, entry['SignalName'], usstype, spawnstate, spawnfaction, threat, time_remain, timestamp)
+      
       if entry['event'] == 'ApproachSettlement':
          if(this.body_name is not None):
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
@@ -1106,6 +1130,20 @@ def send_spacecodex(cmdr, entryID, name, category, subcategory, name_loc, timest
       'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
    }
    call(cmdr, 'spacecodex', payload)
+
+def send_fss(cmdr, name, usstype, spawnstate, spawnfaction, threat, time_remain, timestamp):
+   url = this.url_website+"send_data"
+   payload = {
+      'system' : this.system_name,
+      'name' : name,
+      'usstype' : usstype,
+      'spawnstate' : spawnstate,
+      'spawnfaction' : spawnfaction,
+      'threat' : threat,
+      'time_remain' : time_remain,
+      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
+   }
+   call(cmdr, 'spacefss', payload)
 
 def send_chksys(cmdr, chksys, comment, timestamp):
    url = this.url_website+"send_data"
