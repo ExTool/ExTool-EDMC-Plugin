@@ -83,7 +83,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "1.2.3"
+this.version = "1.2.4"
 this.update = True
 this.disable = False
 this.new_version = False
@@ -843,10 +843,10 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          if this.lowALT:
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             send_data(cmdr, this.nearloc['Latitude'], this.nearloc['Longitude'], this.nearloc['Altitude'], this.nearloc['Heading'], "Screenshot CODEX", this.nearloc['Time'])
-            send_codex(cmdr, entry['EntryID'], entry['Name'], entry['Category'], entry['SubCategory'], timestamp)
+            send_codex(cmdr, entry['EntryID'], entry['Name'], entry['Category'], entry['SubCategory'], entry['Name_Localised'], timestamp)
          else:
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-            send_spacecodex(cmdr, entry['EntryID'], entry['Name'], entry['Category'], entry['SubCategory'], timestamp)
+            send_spacecodex(cmdr, entry['EntryID'], entry['Name'], entry['Category'], entry['SubCategory'], entry['Name_Localised'], timestamp)
 
 def update_nearloc(latitude, longitude, altitude, heading, timestamp):
    this.nearloc['Latitude'] = latitude
@@ -1070,7 +1070,7 @@ def send_spacedatascan(cmdr, typescan, timestamp):
    }
    call(cmdr, 'spacedatascan', payload)
 
-def send_codex(cmdr, entryID, name, category, subcategory, timestamp):
+def send_codex(cmdr, entryID, name, category, subcategory, name_loc, timestamp):
    url = this.url_website+"send_data"
    payload = {
       'system' : this.system_name,
@@ -1083,12 +1083,13 @@ def send_codex(cmdr, entryID, name, category, subcategory, timestamp):
       'name' : name,
       'category' : category,
       'subcategory' : subcategory,
+      'nameloc' : name_loc,
       'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp)),
       'time' : '%d' % round(timestamp-this.nearloc['Time'])
    }
    call(cmdr, 'codex', payload)
 
-def send_spacecodex(cmdr, entryID, name, category, subcategory, timestamp):
+def send_spacecodex(cmdr, entryID, name, category, subcategory, name_loc, timestamp):
    url = this.url_website+"send_data"
    payload = {
       'system' : this.system_name,
@@ -1097,6 +1098,7 @@ def send_spacecodex(cmdr, entryID, name, category, subcategory, timestamp):
       'name' : name,
       'category' : category,
       'subcategory' : subcategory,
+      'nameloc' : name_loc,
       'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
    }
    call(cmdr, 'spacecodex', payload)
