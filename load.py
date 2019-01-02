@@ -83,7 +83,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "1.2.4"
+this.version = "1.2.5"
 this.update = True
 this.disable = False
 this.new_version = False
@@ -791,7 +791,11 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
       if entry['event'] == 'ApproachSettlement':
          if(this.body_name is not None):
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
-            send_settlement(cmdr, entry['Name'], entry['MarketID'], this.StartJump, timestamp)
+            if 'Name_Localised' in entry:
+               name_loc = entry['Name_Localised']
+            else:
+               name_loc = None
+            send_settlement(cmdr, entry['Name'], name_loc, entry['MarketID'], this.StartJump, entry['Latitude'], entry['Longitude'], timestamp)
          
       if entry['event'] == 'CollectCargo':
          if entry['Type'] in this.droped:
@@ -1194,7 +1198,7 @@ def send_spacestation(cmdr, name_settlement, marketID, stationtype, timestamp):
    }
    call(cmdr, 'spacestation', payload)
 
-def send_settlement(cmdr, name_settlement, marketID, startJump, timestamp):
+def send_settlement(cmdr, name_settlement, nameloc_settlement, marketID, startJump, lat_settlement, lon_settlement, timestamp):
    url = this.url_website+"send_data"
    payload = {
       'system' : this.system_name,
@@ -1204,8 +1208,11 @@ def send_settlement(cmdr, name_settlement, marketID, startJump, timestamp):
       'altitude' : '{}'.format(this.nearloc['Altitude']),
       'heading' : '{}'.format(this.nearloc['Heading']),
       'name_settlement' : name_settlement,
+      'nameloc_settlement' : nameloc_settlement,
       'marketID' : '{}'.format(marketID),
       'startJump' : '{}'.format(startJump),
+      'lat_settlement' : '{}'.format(lat_settlement),
+      'lon_settlement' : '{}'.format(lon_settlement),
       'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp)),
       'time' : '%d' % round(timestamp-this.nearloc['Time'])
    }
