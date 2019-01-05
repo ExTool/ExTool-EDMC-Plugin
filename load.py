@@ -83,7 +83,7 @@ this.lastloc = dict(this.lastloc)
 #this.SCnocoord = 0
 
 this.url_website = "http://elite.laulhere.com/ExTool/"
-this.version = "1.2.6"
+this.version = "1.2.7"
 this.update = True
 this.disable = False
 this.new_version = False
@@ -683,7 +683,10 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
          if entry['Message'][:len(this.commentToggle)].lower() == this.commentToggle.lower():
             timestamp = time.mktime(time.strptime(entry['timestamp'], '%Y-%m-%dT%H:%M:%SZ'))
             comment = entry['Message'][len(this.commentToggle)+1:]
-            send_comment(cmdr, comment, timestamp)
+            if this.lowALT:
+               send_comment(cmdr, comment, timestamp)
+            else:
+               send_spacecomment(cmdr, comment, timestamp)
             
       if entry['event'] == 'Screenshot':
          if ('Latitude' in entry) and ('Longitude' in entry):
@@ -883,7 +886,7 @@ def update_nearloc(latitude, longitude, altitude, heading, timestamp):
    this.nearloc['Heading'] = heading
    this.nearloc['Time'] = timestamp
    if altitude is not None:
-      if altitude < 2.: #1.03 min
+      if altitude < 10.: #1.03 min
          this.lowALT = True
       else:
          this.lowALT = False
@@ -1156,6 +1159,20 @@ def send_chksys(cmdr, chksys, comment, timestamp):
    call(cmdr, 'chksys', payload)
 
 def send_comment(cmdr, comment, timestamp):
+   url = this.url_website+"send_data"
+   payload = {
+      'system' : this.system_name,
+      'body' : this.body_name,
+      'latitude' : '{}'.format(this.nearloc['Latitude']),
+      'longitude' : '{}'.format(this.nearloc['Longitude']),
+      'altitude' : '{}'.format(this.nearloc['Altitude']),
+      'heading' : '{}'.format(this.nearloc['Heading']),
+      'comment' : comment,
+      'timestamp' : time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))
+   }
+   call(cmdr, 'comment', payload)
+
+def send_spacecomment(cmdr, comment, timestamp):
    url = this.url_website+"send_data"
    payload = {
       'system' : this.system_name,
